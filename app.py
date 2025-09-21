@@ -2858,39 +2858,51 @@ def create_notification_internal(recipient, title, message, notification_type='i
 
 @app.route('/marketplace')
 def marketplace():
-    """Dispatch users to a role-specific marketplace view"""
+    """Dispatch users to a role-specific marketplace view with role override support"""
+    # Get role from query parameter first
     role_override = request.args.get('role', '').strip().lower()
-    if role_override in ['contractors', 'agency', 'individual', 'job seeker', 'job_seeker']:
+    
+    # Validate the role_override if provided
+    valid_roles = {'contractors', 'agency', 'individual', 'job seeker', 'job_seeker'}
+    if role_override and role_override in valid_roles:
+        # If valid role override provided, use it regardless of session role
         role = role_override
     else:
+        # Otherwise fall back to user's session role
         user = _get_user_by_cookie()
         if not user:
             return redirect('/')
         role = (user.get('signupRole', '') or user.get('role', '')).lower().strip()
 
+    # Map roles to their marketplace URLs with role parameter to maintain context
     if role == 'contractors':
-        return redirect('/marketplace/contractors')
+        return redirect('/marketplace/contractors?role=contractors')
     elif role == 'agency':
-        return redirect('/marketplace/agency')
+        return redirect('/marketplace/agency?role=agency')
     elif role in ['individual', 'job seeker', 'job_seeker', '']:
-        return redirect('/marketplace/individual')
+        return redirect('/marketplace/individual?role=individual')
     else:
         # Fallback to individual marketplace if role is unknown
-        return redirect('/marketplace/individual')
+        return redirect('/marketplace/individual?role=individual')
     
 @app.route('/marketplace/contractors')
 def marketplace_contractors():
     """Contractors see agency listings to hire from"""
+    # Check role override parameter first
+    role_override = request.args.get('role', '').strip().lower()
+    
     user = _get_user_by_cookie()
     if not user:
         return redirect('/')
-    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
-    if not user:
-        return redirect('/')
-    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
-    role = str(role).lower().strip()
-    if role != 'contractors':
-        return redirect('/marketplace')
+        
+    # If role override is provided and valid, use it
+    if role_override == 'contractors':
+        role = 'contractors'
+    else:
+        # Otherwise use session role
+        role = (user.get('signupRole', '') or user.get('role', '')).strip().lower()
+        if role != 'contractors':
+            return redirect('/marketplace')
 
     # Load agencies from registrations
     agencies = []
@@ -2910,13 +2922,21 @@ def marketplace_contractors():
 @app.route('/marketplace/agency')
 def marketplace_agency():
     """Agency view of the marketplace - see workers/recruits"""
+    # Check role override parameter first
+    role_override = request.args.get('role', '').strip().lower()
+    
     user = _get_user_by_cookie()
     if not user:
         return redirect('/')
-    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
-    role = str(role).lower().strip()
-    if role != 'agency':
-        return redirect('/marketplace')
+        
+    # If role override is provided and valid, use it
+    if role_override == 'agency':
+        role = 'agency'
+    else:
+        # Otherwise use session role
+        role = (user.get('signupRole', '') or user.get('role', '')).strip().lower()
+        if role != 'agency':
+            return redirect('/marketplace')
 
     # Load recruits (individuals) from registrations
     recruits = []
@@ -2936,13 +2956,21 @@ def marketplace_agency():
 @app.route('/marketplace/individual')
 def marketplace_individual():
     """Individual/job seeker marketplace - browse contracts and agencies"""
+    # Check role override parameter first
+    role_override = request.args.get('role', '').strip().lower()
+    
     user = _get_user_by_cookie()
     if not user:
         return redirect('/')
-    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
-    role = str(role).lower().strip()
-    if role not in ['individual', 'job seeker', 'job_seeker', '']:
-        return redirect('/marketplace')
+        
+    # If role override is provided and valid, use it
+    if role_override == 'individual':
+        role = 'individual'
+    else:
+        # Otherwise use session role
+        role = (user.get('signupRole', '') or user.get('role', '')).strip().lower()
+        if role not in ['individual', 'job seeker', 'job_seeker', '']:
+            return redirect('/marketplace')
 
     # Provide contracts and agencies for individuals to browse
     contracts = _load_json('contracts.json')
