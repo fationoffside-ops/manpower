@@ -909,7 +909,7 @@ def signup():
             return jsonify({
                 'success': False,
                 'message': 'An account with this email already exists'
-            }), 409
+            }, 409)
         
         # Create new registration record
         rec = {
@@ -1005,7 +1005,7 @@ def signin():
                 return jsonify({
                     'success': False,
                     'message': 'Invalid credentials'
-                }), 401
+                ), 401
         else:
             # Legacy account without password
             logger.log_security_event(
@@ -1193,7 +1193,8 @@ def dashboard():
     if not user:
         return redirect('/')
 
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    role = str(role).lower()
 
     if role == 'contractors':
         return redirect('/dashboard/contractors')
@@ -1201,7 +1202,10 @@ def dashboard():
         return redirect('/dashboard/agency')
     elif role == 'admin':
         return redirect('/dashboard/admin')
+    elif role in ['individual', 'job seeker', 'job_seeker', '']:
+        return redirect('/dashboard/individual')
     else:
+        # Fallback to individual dashboard if role is unknown
         return redirect('/dashboard/individual')
 
 
@@ -1213,7 +1217,8 @@ def dashboard_contractors():
     if not user:
         return redirect('/')
 
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    role = str(role).lower()
     if role != 'contractors':
         return redirect('/dashboard')
 
@@ -1228,7 +1233,8 @@ def dashboard_agency():
     if not user:
         return redirect('/')
 
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    role = str(role).lower()
     if role != 'agency':
         return redirect('/dashboard')
 
@@ -1243,8 +1249,9 @@ def dashboard_individual():
     if not user:
         return redirect('/')
 
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
-    if role not in ['individual', 'job_seeker', None]:
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    role = str(role).lower()
+    if role not in ['individual', 'job seeker', 'job_seeker', '']:
         return redirect('/dashboard')
 
     return render_template('dashboard_individual.html', user=user)
@@ -2852,29 +2859,37 @@ def create_notification_internal(recipient, title, message, notification_type='i
 @app.route('/marketplace')
 def marketplace():
     """Dispatch users to a role-specific marketplace view"""
-    user = _get_user_by_cookie()
-    if not user:
-        return redirect('/')
-
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
-    role = (role or '').lower()
+    role_override = request.args.get('role', '').strip().lower()
+    if role_override in ['contractors', 'agency', 'individual', 'job seeker', 'job_seeker']:
+        role = role_override
+    else:
+        user = _get_user_by_cookie()
+        if not user:
+            return redirect('/')
+        role = (user.get('signupRole', '') or user.get('role', '')).lower().strip()
 
     if role == 'contractors':
         return redirect('/marketplace/contractors')
     elif role == 'agency':
         return redirect('/marketplace/agency')
-    else:
+    elif role in ['individual', 'job seeker', 'job_seeker', '']:
         return redirect('/marketplace/individual')
-
-
+    else:
+        # Fallback to individual marketplace if role is unknown
+        return redirect('/marketplace/individual')
+    
 @app.route('/marketplace/contractors')
 def marketplace_contractors():
     """Contractors see agency listings to hire from"""
     user = _get_user_by_cookie()
     if not user:
         return redirect('/')
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
-    if (role or '').lower() != 'contractors':
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    if not user:
+        return redirect('/')
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    role = str(role).lower().strip()
+    if role != 'contractors':
         return redirect('/marketplace')
 
     # Load agencies from registrations
@@ -2889,7 +2904,7 @@ def marketplace_contractors():
     except Exception:
         agencies = []
 
-    return render_template('marketplace.html', user=user, role='contractors', agencies=agencies)
+    return render_template('marketplace_contractors.html', user=user, agencies=agencies)
 
 
 @app.route('/marketplace/agency')
@@ -2898,8 +2913,9 @@ def marketplace_agency():
     user = _get_user_by_cookie()
     if not user:
         return redirect('/')
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
-    if (role or '').lower() != 'agency':
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    role = str(role).lower().strip()
+    if role != 'agency':
         return redirect('/marketplace')
 
     # Load recruits (individuals) from registrations
@@ -2914,7 +2930,7 @@ def marketplace_agency():
     except Exception:
         recruits = []
 
-    return render_template('marketplace.html', user=user, role='agency', recruits=recruits)
+    return render_template('marketplace_agency.html', user=user, recruits=recruits)
 
 
 @app.route('/marketplace/individual')
@@ -2923,8 +2939,9 @@ def marketplace_individual():
     user = _get_user_by_cookie()
     if not user:
         return redirect('/')
-    role = (user.get('signupRole') if user else None) or (user.get('role') if user else None)
-    if (role or '').lower() not in ('individual', 'job seeker', 'job_seeker', ''):
+    role = (user.get('signupRole', '') if user else '') or (user.get('role', '') if user else '')
+    role = str(role).lower().strip()
+    if role not in ['individual', 'job seeker', 'job_seeker', '']:
         return redirect('/marketplace')
 
     # Provide contracts and agencies for individuals to browse
@@ -2940,7 +2957,7 @@ def marketplace_individual():
     except Exception:
         agencies = []
 
-    return render_template('marketplace.html', user=user, role='individual', contracts=contracts, agencies=agencies)
+    return render_template('marketplace_individual.html', user=user, contracts=contracts, agencies=agencies)
 
 
 @app.route('/agency/<path:email>')
@@ -2969,17 +2986,4 @@ def agency_profile(email):
         return redirect('/marketplace')
 
     return render_template('agency_profile.html', agency=agency)
-
-
-if __name__ == '__main__':
-    # Initialize logger first
-    logger.init_app(app)
-    app.logger.info("Starting Manpower Platform...")
-    
-    # Get environment settings
-    debug_mode = os.getenv('FLASK_ENV') == 'development'
-    port = int(os.getenv('PORT', 5000))
-    
-    # Start the application
-    app.run(debug=debug_mode, port=port)
 

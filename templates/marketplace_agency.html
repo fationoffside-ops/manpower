@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agency Marketplace · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <div class="container header-inner">
+        <div class="brand" role="group">
+          <div class="logo" role="img" aria-label="MP Logo">MP</div>
+          <div>
+            <div class="brand-title">Manpower</div>
+            <div class="brand-sub">Agency Marketplace</div>
+          </div>
+        </div>
+        <nav class="nav" role="navigation" aria-label="Main navigation">
+          <a href="#browse">Browse</a>
+          <a href="#my-listings">My Recruits</a>
+          <a href="#trades">Trade History</a>
+        </nav>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="logout()" aria-label="Log out of your account">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard" role="main">
+      <div class="dashboard-header">
+        <div>
+          <h1>Agency Marketplace</h1>
+          <p class="muted">Find and recruit qualified workers. Browse worker profiles, contact candidates, and manage your recruits.</p>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-outline" onclick="showListingModal()">List Recruit</button>
+          <button class="btn btn-gold" onclick="showPurchaseModal()">Quick Hire</button>
+        </div>
+      </div>
+
+      <!-- Marketplace Stats -->
+      <div class="stats-overview" role="region" aria-label="Marketplace Statistics">
+        <div class="stat-card" role="group" aria-labelledby="active-listings-label">
+          <div class="stat-number" id="active-listings" aria-live="polite">0</div>
+          <div class="stat-label" id="active-listings-label">Active Recruits</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="completed-trades-label">
+          <div class="stat-number" id="completed-trades" aria-live="polite">0</div>
+          <div class="stat-label" id="completed-trades-label">Completed Placements</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="avg-price-label">
+          <div class="stat-number" id="avg-price" aria-live="polite">₹0</div>
+          <div class="stat-label" id="avg-price-label">Average Earnings</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="success-rate-label">
+          <div class="stat-number" id="success-rate" aria-live="polite">0%</div>
+          <div class="stat-label" id="success-rate-label">Success Rate</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <section class="dashboard-section">
+        <div class="marketplace-filters">
+          <div class="form-group">
+            <label for="skill-search" class="visually-hidden">Search by Skills</label>
+            <input type="search" placeholder="Search by skills..." id="skill-search" name="skill-search">
+          </div>
+          <div class="form-select-group">
+            <label for="experience-filter">Experience Level</label>
+            <select id="experience-filter">
+              <option value="">All Experience Levels</option>
+              <option value="entry">Entry Level</option>
+              <option value="mid">Mid Level</option>
+              <option value="senior">Senior Level</option>
+            </select>
+          </div>
+          <div class="form-select-group">
+            <label for="location-filter">Location</label>
+            <select id="location-filter">
+              <option value="">All Locations</option>
+              <option value="bangalore">Bangalore</option>
+              <option value="delhi">Delhi</option>
+              <option value="mumbai">Mumbai</option>
+              <option value="chennai">Chennai</option>
+            </select>
+          </div>
+          <button class="btn btn-outline" onclick="applyFilters()">Apply Filters</button>
+        </div>
+      </section>
+
+      <!-- Available Recruits -->
+      <section id="browse" class="dashboard-section">
+        <h2>Available Recruits</h2>
+        <div id="marketplaceList" class="recruits-grid" role="list">
+          {% if recruits and recruits|length > 0 %}
+            {% for r in recruits %}
+              <div class="recruit-card" role="listitem">
+                <div class="recruit-header">
+                  <div class="recruit-avatar" role="img" aria-label="{{ r.get('firstName', '')[:1] }}">{{ r.get('firstName', '')[:1] }}</div>
+                  <div>
+                    <div class="recruit-name">{{ r.get('firstName', '') }} {{ r.get('lastName', '') }}</div>
+                    <div class="recruit-meta">{{ r.get('city', 'Unknown') }} · {{ r.get('experience', '0') }} Years</div>
+                  </div>
+                </div>
+                <div class="recruit-body">
+                  <p class="muted">{{ r.get('bio', '') or r.get('description', '') or '' }}</p>
+                  <div class="recruit-skills">
+                    {% for skill in r.get('skills', []) %}
+                      <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="recruit-actions">
+                  <button class="btn btn-outline" onclick="viewProfile('{{ r.get('email')|e }}')">View Profile</button>
+                  <button class="btn btn-gold" onclick="contactRecruit('{{ r.get('email')|e }}')">Contact Recruit</button>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted">No recruits found.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- My Recruits -->
+      <section id="my-listings" class="dashboard-section">
+        <h2>My Recruits</h2>
+        <div id="my-listings-grid" class="recruits-grid">
+          <!-- Agency's recruits will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Trade History -->
+      <section id="trades" class="dashboard-section">
+        <h2>Trade History</h2>
+        <div id="trade-history" class="trades-list">
+          <!-- Trade history will be loaded here -->
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/script.js"></script>
+    <script nonce="{{ nonce }}">
+      function loadMarketplaceData() {
+        // Load marketplace stats
+        fetch('/api/analytics/dashboard')
+          .then(r => r.json())
+          .then(data => {
+            if (data.active_contracts) animateNumber('active-listings', 0, data.active_contracts, 1000);
+            if (data.completed_contracts) animateNumber('completed-trades', 0, data.completed_contracts, 1000);
+            if (data.success_rate) animateNumber('success-rate', 0, data.success_rate, 1000);
+          })
+          .catch(console.error);
+      }
+
+      function contactRecruit(email) {
+        window.location.href = '/messages?to=' + encodeURIComponent(email);
+      }
+
+      function viewProfile(email) {
+        window.location.href = '/profile/' + encodeURIComponent(email);
+      }
+
+      document.addEventListener('DOMContentLoaded', loadMarketplaceData);
+    </script>
+  </body>
+</html>

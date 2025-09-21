@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Individual Marketplace · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <div class="container header-inner">
+        <div class="brand" role="group">
+          <div class="logo" role="img" aria-label="MP Logo">MP</div>
+          <div>
+            <div class="brand-title">Manpower</div>
+            <div class="brand-sub">Individual Marketplace</div>
+          </div>
+        </div>
+        <nav class="nav" role="navigation" aria-label="Main navigation">
+          <a href="#browse">Browse</a>
+          <a href="#my-applications">My Applications</a>
+          <a href="#trades">History</a>
+        </nav>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="logout()" aria-label="Log out of your account">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard" role="main">
+      <div class="dashboard-header">
+        <div>
+          <h1>Individual Marketplace</h1>
+          <p class="muted">Browse available contracts and agencies. Find work opportunities and connect with potential employers.</p>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-gold" onclick="showApplicationModal()">Quick Apply</button>
+        </div>
+      </div>
+
+      <!-- Marketplace Stats -->
+      <div class="stats-overview" role="region" aria-label="Marketplace Statistics">
+        <div class="stat-card" role="group" aria-labelledby="active-listings-label">
+          <div class="stat-number" id="active-listings" aria-live="polite">0</div>
+          <div class="stat-label" id="active-listings-label">Available Jobs</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="completed-trades-label">
+          <div class="stat-number" id="completed-trades" aria-live="polite">0</div>
+          <div class="stat-label" id="completed-trades-label">Applied Jobs</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="avg-price-label">
+          <div class="stat-number" id="avg-price" aria-live="polite">₹0</div>
+          <div class="stat-label" id="avg-price-label">Average Salary</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="success-rate-label">
+          <div class="stat-number" id="success-rate" aria-live="polite">0%</div>
+          <div class="stat-label" id="success-rate-label">Success Rate</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <section class="dashboard-section">
+        <div class="marketplace-filters">
+          <div class="form-group">
+            <label for="skill-search" class="visually-hidden">Search by Skills</label>
+            <input type="search" placeholder="Search jobs by skills..." id="skill-search" name="skill-search">
+          </div>
+          <div class="form-select-group">
+            <label for="contract-type">Contract Type</label>
+            <select id="contract-type">
+              <option value="">All Types</option>
+              <option value="full-time">Full Time</option>
+              <option value="part-time">Part Time</option>
+              <option value="contract">Contract</option>
+            </select>
+          </div>
+          <div class="form-select-group">
+            <label for="location-filter">Location</label>
+            <select id="location-filter">
+              <option value="">All Locations</option>
+              <option value="bangalore">Bangalore</option>
+              <option value="delhi">Delhi</option>
+              <option value="mumbai">Mumbai</option>
+              <option value="chennai">Chennai</option>
+            </select>
+          </div>
+          <button class="btn btn-outline" onclick="applyFilters()">Apply Filters</button>
+        </div>
+      </section>
+
+      <!-- Available Contracts -->
+      <section id="browse" class="dashboard-section">
+        <h2>Available Contracts</h2>
+        <div id="marketplaceList" class="contracts-grid" role="list">
+          {% if contracts and contracts|length > 0 %}
+            {% for c in contracts %}
+              <div class="contract-card" role="listitem">
+                <div class="contract-header">
+                  <div>
+                    <div class="contract-title">{{ c.get('title', 'Untitled Contract') }}</div>
+                    <div class="contract-meta">{{ c.get('location', 'Unknown') }} · Posted by {{ c.get('owner', 'Unknown') }}</div>
+                  </div>
+                  <div class="contract-budget">₹{{ c.get('budget', 0)|round|int }}</div>
+                </div>
+                <div class="contract-body">
+                  <p class="muted">{{ c.get('description', '') }}</p>
+                  <div class="contract-skills">
+                    {% for skill in c.get('skills', []) %}
+                      <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="contract-actions">
+                  <button class="btn btn-outline" onclick="viewContract('{{ c.get('id')|e }}')">View Details</button>
+                  <button class="btn btn-gold" onclick="applyForContract('{{ c.get('id')|e }}')">Apply Now</button>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted">No contracts available.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Available Agencies -->
+      <section id="agencies" class="dashboard-section">
+        <h2>Featured Agencies</h2>
+        <div class="agencies-grid" role="list">
+          {% if agencies and agencies|length > 0 %}
+            {% for a in agencies %}
+              <div class="agency-card" role="listitem">
+                <div class="agency-header">
+                  <div class="agency-logo" role="img" aria-label="{{ a.get('company', '')[:1] }}">{{ a.get('company', '')[:1] }}</div>
+                  <div>
+                    <div class="agency-name">{{ a.get('company') or a.get('email') }}</div>
+                    <div class="agency-meta">{{ a.get('city', 'Unknown') }} · Rating: {{ a.get('rating', 0) }}</div>
+                  </div>
+                </div>
+                <div class="agency-body">
+                  <p class="muted">{{ a.get('bio', '') or a.get('description', '') or '' }}</p>
+                </div>
+                <div class="agency-actions">
+                  <a class="btn btn-outline" href="/agency/{{ a.get('email') }}">View Profile</a>
+                  <button class="btn btn-gold contact-btn" data-email="{{ a.get('email')|e }}">Contact Agency</button>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted">No agencies found.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- My Applications -->
+      <section id="my-applications" class="dashboard-section">
+        <h2>My Applications</h2>
+        <div id="applications-grid" class="applications-grid">
+          <!-- User's applications will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Application History -->
+      <section id="trades" class="dashboard-section">
+        <h2>Application History</h2>
+        <div id="applications-history" class="applications-list">
+          <!-- Application history will be loaded here -->
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/script.js"></script>
+    <script nonce="{{ nonce }}">
+      function loadMarketplaceData() {
+        // Load marketplace stats
+        fetch('/api/analytics/dashboard')
+          .then(r => r.json())
+          .then(data => {
+            if (data.applications_sent) animateNumber('active-listings', 0, data.applications_sent, 1000);
+            if (data.applications_approved) animateNumber('completed-trades', 0, data.applications_approved, 1000);
+            if (data.success_rate) animateNumber('success-rate', 0, data.success_rate, 1000);
+          })
+          .catch(console.error);
+
+        // Load applications
+        loadApplications();
+      }
+
+      function viewContract(id) {
+        window.location.href = '/contract/' + encodeURIComponent(id);
+      }
+
+      function applyForContract(id) {
+        fetch('/api/contracts/' + encodeURIComponent(id) + '/apply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            alert('Application submitted successfully!');
+            loadApplications();
+          } else {
+            throw new Error(data.message || 'Failed to apply');
+          }
+        })
+        .catch(error => {
+          alert(error.message || 'Failed to submit application');
+        });
+      }
+
+      function loadApplications() {
+        fetch('/api/applications')
+          .then(r => r.json())
+          .then(data => {
+            const grid = document.getElementById('applications-grid');
+            if (!grid) return;
+
+            if (data.applications && data.applications.length > 0) {
+              grid.innerHTML = data.applications.map(app => `
+                <div class="application-card">
+                  <div class="application-header">
+                    <div class="application-title">${app.contract_title || 'Untitled Contract'}</div>
+                    <div class="application-status ${app.status}">${app.status}</div>
+                  </div>
+                  <div class="application-meta">
+                    Applied on ${new Date(app.applied_at).toLocaleDateString()}
+                  </div>
+                  <div class="application-actions">
+                    <button class="btn btn-outline" onclick="viewApplication('${app.id}')">View Details</button>
+                  </div>
+                </div>
+              `).join('');
+            } else {
+              grid.innerHTML = '<p class="muted">No applications found.</p>';
+            }
+          })
+          .catch(console.error);
+      }
+
+      document.addEventListener('DOMContentLoaded', loadMarketplaceData);
+    </script>
+  </body>
+</html>

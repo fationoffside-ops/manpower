@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contractors Marketplace · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <div class="container header-inner">
+        <div class="brand" role="group">
+          <div class="logo" role="img" aria-label="MP Logo">MP</div>
+          <div>
+            <div class="brand-title">Manpower</div>
+            <div class="brand-sub">Contractors Marketplace</div>
+          </div>
+        </div>
+        <nav class="nav" role="navigation" aria-label="Main navigation">
+          <a href="#browse">Browse</a>
+          <a href="#my-listings">My Contracts</a>
+          <a href="#trades">Trade History</a>
+        </nav>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="logout()" aria-label="Log out of your account">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard" role="main">
+      <div class="dashboard-header">
+        <div>
+          <h1>Contractors Marketplace</h1>
+          <p class="muted">Find and hire verified agencies. Browse agency profiles, review their work history, and initiate contracts.</p>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-outline" onclick="showListingModal()">Post Contract</button>
+          <button class="btn btn-gold" onclick="showPurchaseModal()">Quick Hire</button>
+        </div>
+      </div>
+
+      <!-- Marketplace Stats -->
+      <div class="stats-overview" role="region" aria-label="Marketplace Statistics">
+        <div class="stat-card" role="group" aria-labelledby="active-listings-label">
+          <div class="stat-number" id="active-listings" aria-live="polite">0</div>
+          <div class="stat-label" id="active-listings-label">Active Contracts</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="completed-trades-label">
+          <div class="stat-number" id="completed-trades" aria-live="polite">0</div>
+          <div class="stat-label" id="completed-trades-label">Completed Trades</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="avg-price-label">
+          <div class="stat-number" id="avg-price" aria-live="polite">₹0</div>
+          <div class="stat-label" id="avg-price-label">Average Price</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="success-rate-label">
+          <div class="stat-number" id="success-rate" aria-live="polite">0%</div>
+          <div class="stat-label" id="success-rate-label">Success Rate</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <section class="dashboard-section">
+        <div class="marketplace-filters">
+          <div class="form-group">
+            <label for="skill-search" class="visually-hidden">Search by Skills</label>
+            <input type="search" placeholder="Search by agency specialization..." id="skill-search" name="skill-search">
+          </div>
+          <div class="form-select-group">
+            <label for="rating-filter">Rating</label>
+            <select id="rating-filter">
+              <option value="">All Ratings</option>
+              <option value="4">4+ Stars</option>
+              <option value="3">3+ Stars</option>
+              <option value="2">2+ Stars</option>
+            </select>
+          </div>
+          <div class="form-select-group">
+            <label for="location-filter">Location</label>
+            <select id="location-filter">
+              <option value="">All Locations</option>
+              <option value="bangalore">Bangalore</option>
+              <option value="delhi">Delhi</option>
+              <option value="mumbai">Mumbai</option>
+              <option value="chennai">Chennai</option>
+            </select>
+          </div>
+          <button class="btn btn-outline" onclick="applyFilters()">Apply Filters</button>
+        </div>
+      </section>
+
+      <!-- Available Agencies -->
+      <section id="browse" class="dashboard-section">
+        <h2>Available Agencies</h2>
+        <div id="marketplaceList" class="agencies-grid" role="list">
+          {% if agencies and agencies|length > 0 %}
+            {% for a in agencies %}
+              <div class="agency-card" role="listitem">
+                <div class="agency-header">
+                  <div class="agency-logo" role="img" aria-label="{{ a.get('company', '')[:1] }}">{{ a.get('company', '')[:1] }}</div>
+                  <div>
+                    <div class="agency-name">{{ a.get('company') or a.get('email') }}</div>
+                    <div class="agency-meta">{{ a.get('city', 'Unknown') }} · Rating: {{ a.get('rating', 0) }}</div>
+                  </div>
+                </div>
+                <div class="agency-body">
+                  <p class="muted">{{ a.get('bio', '') or a.get('description', '') or '' }}</p>
+                </div>
+                <div class="agency-actions">
+                  <a class="btn btn-outline" href="/agency/{{ a.get('email') }}">View Profile</a>
+                  <button class="btn btn-gold contact-btn" data-email="{{ a.get('email')|e }}">Contact Agency</button>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted">No agencies found.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- My Contracts -->
+      <section id="my-listings" class="dashboard-section">
+        <h2>My Contracts</h2>
+        <div id="my-listings-grid" class="contracts-grid">
+          <!-- User's contracts will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Trade History -->
+      <section id="trades" class="dashboard-section">
+        <h2>Trade History</h2>
+        <div id="trade-history" class="trades-list">
+          <!-- Trade history will be loaded here -->
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/script.js"></script>
+    <script nonce="{{ nonce }}">
+      function loadMarketplaceData() {
+        // Load marketplace stats
+        fetch('/api/analytics/dashboard')
+          .then(r => r.json())
+          .then(data => {
+            if (data.active_contracts) animateNumber('active-listings', 0, data.active_contracts, 1000);
+            if (data.completed_contracts) animateNumber('completed-trades', 0, data.completed_contracts, 1000);
+            if (data.success_rate) animateNumber('success-rate', 0, data.success_rate, 1000);
+          })
+          .catch(console.error);
+
+        // Bind contact buttons
+        bindAgencyActions();
+      }
+
+      document.addEventListener('DOMContentLoaded', loadMarketplaceData);
+    </script>
+  </body>
+</html>
