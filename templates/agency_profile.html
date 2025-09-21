@@ -1,0 +1,156 @@
+{% extends "base_profile.html" %}
+
+{% block title %}{{ user.company }} - Agency Profile{% endblock %}
+
+{% block profile_actions %}
+<button class="btn btn-primary message-btn" id="contactAgencyBtn">
+    <i class="fas fa-message"></i> Message
+</button>
+<button class="btn btn-outline" id="viewContractsBtn">View Contracts</button>
+{% endblock %}
+
+{% block additional_nav %}
+<a href="#services">Services</a>
+<a href="#team">Team</a>
+<a href="#certifications">Certifications</a>
+{% endblock %}
+
+{% block about_content %}
+<div class="agency-overview">
+    <div class="agency-stats">
+        <div class="stat-item">
+            <span class="stat-value" id="totalPlacements">0</span>
+            <span class="stat-label">Total Placements</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="activeContracts">0</span>
+            <span class="stat-label">Active Contracts</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="successRate">0%</span>
+            <span class="stat-label">Success Rate</span>
+        </div>
+    </div>
+    <div class="agency-description" id="agencyDescription"></div>
+    <div class="verification-badges" id="verificationBadges"></div>
+</div>
+{% endblock %}
+
+{% block additional_sections %}
+<!-- Services Section -->
+<section id="services" class="profile-section">
+    <h2>Services</h2>
+    <div class="services-grid" id="servicesList">
+        <!-- Services will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Team Section -->
+<section id="team" class="profile-section">
+    <h2>Team</h2>
+    <div class="team-grid" id="teamList">
+        <!-- Team members will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Certifications Section -->
+<section id="certifications" class="profile-section">
+    <h2>Certifications</h2>
+    <div class="certifications-grid" id="certificationsList">
+        <!-- Certifications will be populated by JavaScript -->
+    </div>
+</section>
+{% endblock %}
+
+{% block profile_data_loaded %}
+// Update agency-specific UI elements
+updateAgencyStats(data.profile);
+updateServices(data.profile.services || []);
+updateTeam(data.profile.team || []);
+updateCertifications(data.profile.certifications || []);
+{% endblock %}
+
+{% block update_profile_ui %}
+// Update verification badges
+const badgesContainer = document.getElementById('verificationBadges');
+if (profile.verification_badges && profile.verification_badges.length) {
+    badgesContainer.innerHTML = profile.verification_badges.map(badge => `
+        <div class="badge">
+            <i class="fas fa-badge-check"></i>
+            <span>${badge}</span>
+        </div>
+    `).join('');
+}
+
+// Update description
+document.getElementById('agencyDescription').innerHTML = profile.description || '';
+{% endblock %}
+
+{% block additional_scripts %}
+<script nonce="{{ nonce }}">
+function updateAgencyStats(profile) {
+    document.getElementById('totalPlacements').textContent = profile.total_placements || 0;
+    document.getElementById('activeContracts').textContent = profile.active_contracts || 0;
+    document.getElementById('successRate').textContent = `${profile.success_rate || 0}%`;
+}
+
+function updateServices(services) {
+    const container = document.getElementById('servicesList');
+    container.innerHTML = services.map(service => `
+        <div class="service-card">
+            <div class="service-icon">
+                <i class="fas ${service.icon}"></i>
+            </div>
+            <h3>${service.name}</h3>
+            <p>${service.description}</p>
+            <ul class="service-features">
+                ${service.features.map(feature => `<li>${feature}</li>`).join('')}
+            </ul>
+        </div>
+    `).join('');
+}
+
+function updateTeam(team) {
+    const container = document.getElementById('teamList');
+    container.innerHTML = team.map(member => `
+        <div class="team-card">
+            <div class="member-avatar">
+                ${member.avatar ? `<img src="${member.avatar}" alt="">` : 
+                `<div class="avatar-initial">${member.name[0].toUpperCase()}</div>`}
+            </div>
+            <h3>${member.name}</h3>
+            <div class="member-role">${member.role}</div>
+            <p>${member.bio}</p>
+        </div>
+    `).join('');
+}
+
+function updateCertifications(certifications) {
+    const container = document.getElementById('certificationsList');
+    container.innerHTML = certifications.map(cert => `
+        <div class="certification-card">
+            <div class="certification-logo">
+                <img src="${cert.logo}" alt="">
+            </div>
+            <div class="certification-info">
+                <h3>${cert.name}</h3>
+                <div class="certification-issuer">${cert.issuer}</div>
+                <div class="certification-date">Issued ${new Date(cert.issued_date).toLocaleDateString()}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Contact Agency
+document.getElementById('contactAgencyBtn').addEventListener('click', () => {
+    const profileId = new URLSearchParams(window.location.search).get('id');
+    window.location.href = `/messages?user=${profileId}`;
+});
+
+// View Contracts
+document.getElementById('viewContractsBtn').addEventListener('click', () => {
+    const profileId = new URLSearchParams(window.location.search).get('id');
+    window.location.href = `/contracts?agency=${profileId}`;
+});
+</script>
+{% endblock %}

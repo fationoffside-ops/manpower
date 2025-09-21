@@ -1,0 +1,209 @@
+{% extends "base_profile.html" %}
+
+{% block title %}{{ user.company }} - Contractor Profile{% endblock %}
+
+{% block profile_actions %}
+<button class="btn btn-primary message-btn" id="contactContractorBtn">
+    <i class="fas fa-message"></i> Message
+</button>
+<button class="btn btn-outline" id="viewJobsBtn">View Jobs</button>
+{% endblock %}
+
+{% block additional_nav %}
+<a href="#projects">Projects</a>
+<a href="#specializations">Specializations</a>
+<a href="#workforce">Workforce</a>
+{% endblock %}
+
+{% block about_content %}
+<div class="contractor-overview">
+    <div class="contractor-stats">
+        <div class="stat-item">
+            <span class="stat-value" id="completedProjects">0</span>
+            <span class="stat-label">Completed Projects</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="activeProjects">0</span>
+            <span class="stat-label">Active Projects</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="workforceSize">0</span>
+            <span class="stat-label">Workforce Size</span>
+        </div>
+    </div>
+    <div class="contractor-description" id="contractorDescription"></div>
+    <div class="verification-badges" id="verificationBadges"></div>
+</div>
+{% endblock %}
+
+{% block additional_sections %}
+<!-- Projects Section -->
+<section id="projects" class="profile-section">
+    <h2>Projects</h2>
+    <div class="projects-grid" id="projectsList">
+        <!-- Projects will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Specializations Section -->
+<section id="specializations" class="profile-section">
+    <h2>Specializations</h2>
+    <div class="specializations-grid" id="specializationsList">
+        <!-- Specializations will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Workforce Section -->
+<section id="workforce" class="profile-section">
+    <h2>Workforce Overview</h2>
+    <div class="workforce-summary" id="workforceSummary">
+        <!-- Workforce stats will be populated by JavaScript -->
+    </div>
+    <div class="workforce-categories" id="workforceCategories">
+        <!-- Worker categories will be populated by JavaScript -->
+    </div>
+</section>
+{% endblock %}
+
+{% block profile_data_loaded %}
+// Update contractor-specific UI elements
+updateContractorStats(data.profile);
+updateProjects(data.profile.projects || []);
+updateSpecializations(data.profile.specializations || []);
+updateWorkforce(data.profile.workforce || {});
+{% endblock %}
+
+{% block update_profile_ui %}
+// Update verification badges
+const badgesContainer = document.getElementById('verificationBadges');
+if (profile.verification_badges && profile.verification_badges.length) {
+    badgesContainer.innerHTML = profile.verification_badges.map(badge => `
+        <div class="badge">
+            <i class="fas fa-badge-check"></i>
+            <span>${badge}</span>
+        </div>
+    `).join('');
+}
+
+// Update description
+document.getElementById('contractorDescription').innerHTML = profile.description || '';
+{% endblock %}
+
+{% block additional_scripts %}
+<script nonce="{{ nonce }}">
+function updateContractorStats(profile) {
+    document.getElementById('completedProjects').textContent = profile.completed_projects || 0;
+    document.getElementById('activeProjects').textContent = profile.active_projects || 0;
+    document.getElementById('workforceSize').textContent = profile.workforce_size || 0;
+}
+
+function updateProjects(projects) {
+    const container = document.getElementById('projectsList');
+    container.innerHTML = projects.map(project => `
+        <div class="project-card">
+            <div class="project-images">
+                ${project.images.map(img => `
+                    <img src="${img}" alt="Project Image">
+                `).join('')}
+            </div>
+            <div class="project-info">
+                <h3>${project.name}</h3>
+                <div class="project-meta">
+                    <span class="project-type">${project.type}</span>
+                    <span class="project-duration">${project.duration}</span>
+                </div>
+                <p>${project.description}</p>
+                <div class="project-skills">
+                    ${project.skills.map(skill => `
+                        <span class="skill-tag">${skill}</span>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateSpecializations(specializations) {
+    const container = document.getElementById('specializationsList');
+    container.innerHTML = specializations.map(spec => `
+        <div class="specialization-card">
+            <div class="specialization-icon">
+                <i class="fas ${spec.icon}"></i>
+            </div>
+            <div class="specialization-info">
+                <h3>${spec.name}</h3>
+                <p>${spec.description}</p>
+                <div class="expertise-level">
+                    <span>Expertise Level:</span>
+                    <div class="level-bar">
+                        <div class="level-fill" style="width: ${spec.expertise_level}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateWorkforce(workforce) {
+    // Update summary
+    const summaryContainer = document.getElementById('workforceSummary');
+    summaryContainer.innerHTML = `
+        <div class="workforce-stats">
+            <div class="stat-item">
+                <span class="stat-value">${workforce.total_workers}</span>
+                <span class="stat-label">Total Workers</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${workforce.available_workers}</span>
+                <span class="stat-label">Available</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${workforce.average_experience}y</span>
+                <span class="stat-label">Avg. Experience</span>
+            </div>
+        </div>
+    `;
+
+    // Update categories
+    const categoriesContainer = document.getElementById('workforceCategories');
+    categoriesContainer.innerHTML = workforce.categories.map(category => `
+        <div class="workforce-category">
+            <div class="category-header">
+                <h3>${category.name}</h3>
+                <span class="worker-count">${category.count} workers</span>
+            </div>
+            <div class="category-skills">
+                ${category.skills.map(skill => `
+                    <span class="skill-tag">${skill}</span>
+                `).join('')}
+            </div>
+            <div class="experience-distribution">
+                <div class="exp-bar">
+                    <div class="exp-segment novice" style="width: ${category.experience_distribution.novice}%">
+                        <span class="exp-label">Novice</span>
+                    </div>
+                    <div class="exp-segment intermediate" style="width: ${category.experience_distribution.intermediate}%">
+                        <span class="exp-label">Intermediate</span>
+                    </div>
+                    <div class="exp-segment expert" style="width: ${category.experience_distribution.expert}%">
+                        <span class="exp-label">Expert</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Contact Contractor
+document.getElementById('contactContractorBtn').addEventListener('click', () => {
+    const profileId = new URLSearchParams(window.location.search).get('id');
+    window.location.href = `/messages?user=${profileId}`;
+});
+
+// View Jobs
+document.getElementById('viewJobsBtn').addEventListener('click', () => {
+    const profileId = new URLSearchParams(window.location.search).get('id');
+    window.location.href = `/jobs?contractor=${profileId}`;
+});
+</script>
+{% endblock %}

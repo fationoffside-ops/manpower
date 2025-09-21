@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Profile - Manpower Platform{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='profile.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="profile-container">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-cover">
+                    <!-- Cover photo will be set by CSS -->
+                </div>
+                <div class="profile-header-content">
+                    <div class="profile-avatar">
+                        <img src="" alt="" id="profileAvatar">
+                    </div>
+                    <div class="profile-info">
+                        <h1 id="profileName"></h1>
+                        <p class="profile-headline" id="profileHeadline"></p>
+                        <div class="profile-meta">
+                            <span class="location" id="profileLocation"></span>
+                            <span class="rating">
+                                <i class="fas fa-star"></i>
+                                <span id="profileRating">0.0</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        {% block profile_actions %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Navigation -->
+            <div class="profile-nav">
+                <nav>
+                    <a href="#about" class="active">About</a>
+                    <a href="#experience">Experience</a>
+                    {% block additional_nav %}{% endblock %}
+                    <a href="#reviews">Reviews</a>
+                </nav>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="profile-content">
+                <!-- About Section -->
+                <section id="about" class="profile-section">
+                    <h2>About</h2>
+                    <div class="about-content" id="profileAbout">
+                        {% block about_content %}{% endblock %}
+                    </div>
+                </section>
+
+                <!-- Experience Section -->
+                <section id="experience" class="profile-section">
+                    <h2>Experience</h2>
+                    <div class="experience-list" id="experienceList">
+                        {% block experience_content %}{% endblock %}
+                    </div>
+                </section>
+
+                <!-- Additional Sections -->
+                {% block additional_sections %}{% endblock %}
+
+                <!-- Reviews Section -->
+                <section id="reviews" class="profile-section">
+                    <h2>Reviews</h2>
+                    <div class="reviews-summary">
+                        <div class="rating-summary">
+                            <div class="average-rating">
+                                <span class="rating-number" id="averageRating">0.0</span>
+                                <div class="rating-stars"></div>
+                                <span class="total-reviews" id="totalReviews">0 reviews</span>
+                            </div>
+                            <div class="rating-bars">
+                                <div class="rating-bar">
+                                    <span class="rating-label">5</span>
+                                    <div class="bar-container">
+                                        <div class="bar bar-empty"></div>
+                                    </div>
+                                    <span class="rating-count">0</span>
+                                </div>
+                                <!-- Repeat for 4-1 stars -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reviews-list" id="reviewsList"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <script nonce="{{ nonce }}">
+        // Base profile functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProfileData();
+            setupNavigation();
+            loadReviews();
+        });
+
+        function loadProfileData() {
+            const profileId = new URLSearchParams(window.location.search).get('id');
+            fetch(`/api/profile/${profileId || ''}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateProfileUI(data.profile);
+                        {% block profile_data_loaded %}{% endblock %}
+                    }
+                })
+                .catch(error => console.error('Error loading profile:', error));
+        }
+
+        function setupNavigation() {
+            const nav = document.querySelector('.profile-nav');
+            const links = nav.querySelectorAll('a');
+            
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    
+                    // Update active state
+                    links.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    
+                    // Smooth scroll to section
+                    targetSection.scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        }
+
+        function updateProfileUI(profile) {
+            document.getElementById('profileName').textContent = profile.contact || profile.company || profile.email;
+            document.getElementById('profileHeadline').textContent = profile.headline || '';
+            document.getElementById('profileLocation').textContent = profile.location || '';
+            document.getElementById('profileRating').textContent = profile.rating.toFixed(1);
+            document.getElementById('profileAbout').textContent = profile.about || '';
+            
+            // Set avatar (use first letter of name if no image)
+            const avatar = document.getElementById('profileAvatar');
+            if (profile.avatar) {
+                avatar.src = profile.avatar;
+            } else {
+                avatar.style.display = 'none';
+                const initial = (profile.contact || profile.company || profile.email)[0].toUpperCase();
+                avatar.parentElement.innerHTML = `<div class="avatar-initial">${initial}</div>`;
+            }
+
+            // Update experience
+            const experienceList = document.getElementById('experienceList');
+            if (profile.experience) {
+                experienceList.innerHTML = profile.experience.map(exp => `
+                    <div class="experience-item">
+                        <div class="experience-header">
+                            <h3>${exp.title}</h3>
+                            <span class="experience-duration">${exp.duration}</span>
+                        </div>
+                        <div class="experience-company">${exp.company}</div>
+                        <p class="experience-description">${exp.description}</p>
+                    </div>
+                `).join('');
+            }
+
+            {% block update_profile_ui %}{% endblock %}
+        }
+
+        function loadReviews() {
+            const profileId = new URLSearchParams(window.location.search).get('id');
+            fetch(`/api/profile/${profileId || ''}/reviews`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateReviewsUI(data.reviews);
+                    }
+                })
+                .catch(error => console.error('Error loading reviews:', error));
+        }
+
+        function updateReviewsUI(reviews) {
+            const reviewsList = document.getElementById('reviewsList');
+            const averageRating = document.getElementById('averageRating');
+            const totalReviews = document.getElementById('totalReviews');
+            
+            // Calculate average rating
+            const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+            const avg = reviews.length ? (total / reviews.length).toFixed(1) : '0.0';
+            
+            averageRating.textContent = avg;
+            totalReviews.textContent = `${reviews.length} review${reviews.length !== 1 ? 's' : ''}`;
+            
+            // Update rating bars
+            const counts = [0, 0, 0, 0, 0];
+            reviews.forEach(review => counts[review.rating - 1]++);
+            const maxCount = Math.max(...counts);
+            
+            counts.forEach((count, index) => {
+                const bar = document.querySelector(`.rating-bar:nth-child(${5 - index}) .bar`);
+                const countSpan = document.querySelector(`.rating-bar:nth-child(${5 - index}) .rating-count`);
+                bar.style.width = maxCount ? `${(count / maxCount) * 100}%` : '0%';
+                countSpan.textContent = count;
+            });
+            
+            // Display reviews
+            reviewsList.innerHTML = reviews.map(review => `
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar">
+                                ${review.avatar ? `<img src="${review.avatar}" alt="">` : 
+                                `<div class="avatar-initial">${review.name[0].toUpperCase()}</div>`}
+                            </div>
+                            <div class="reviewer-details">
+                                <h4>${review.name}</h4>
+                                <div class="review-rating">
+                                    ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="review-date">${new Date(review.date).toLocaleDateString()}</div>
+                    </div>
+                    <p class="review-text">${review.text}</p>
+                </div>
+            `).join('');
+        }
+    </script>
+    {% block additional_scripts %}{% endblock %}
+</body>
+</html>

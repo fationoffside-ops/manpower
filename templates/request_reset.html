@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Forgot Password - Manpower</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-panel">
+            <div class="brand">
+                <div class="logo">MP</div>
+                <div class="brand-title">Manpower</div>
+            </div>
+            <form id="requestResetForm" class="auth-form">
+                <h2>Forgot your password?</h2>
+                <p class="form-description">Enter your email address and we'll send you a link to reset your password.</p>
+                <div class="form-group">
+                    <input name="email" type="email" placeholder="Email" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-gold btn-block">Send Reset Link</button>
+                    <p class="text-center">Remember your password? <a href="/" class="link">Sign In</a></p>
+                </div>
+            </form>
+            <div id="resetSuccessMsg" class="form-note" style="display:none;color:var(--gold);font-weight:bold;margin-top:24px;"></div>
+        </div>
+    </div>
+    <script src="/static/request_reset.js"></script>
+</body>
+</html>

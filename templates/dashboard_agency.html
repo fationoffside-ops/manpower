@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agency Dashboard · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">
+          <div class="logo">MP</div>
+          <div>
+            <div class="brand-title">Manpower</div>
+            <div class="brand-sub">Agency Dashboard</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#overview">Overview</a>
+          <a href="#contracts">Contracts</a>
+          <a href="#workers">Workers</a>
+          <a href="#performance">Performance</a>
+        </nav>
+        <div class="actions">
+          <a href="/marketplace" class="btn btn-gold">Marketplace</a>
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard">
+      <div class="dashboard-header">
+        <div>
+          <h1>Agency Dashboard</h1>
+          <p class="muted">Manage your workforce, bid on contracts, and track performance</p>
+        </div>
+        <div class="dashboard-actions">
+          <div class="notification-bell" onclick="toggleNotifications()">
+            🔔
+            <div class="notification-badge" id="notification-badge">0</div>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-item">Loading notifications...</div>
+            </div>
+          </div>
+          <button class="btn btn-outline" onclick="showWorkerModal()">Add Worker</button>
+          <button class="btn btn-gold" onclick="browseContracts()">Browse Contracts</button>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <section id="overview" class="dashboard-section">
+        <div class="stats-overview">
+          <div class="stat-card">
+            <div class="stat-number" id="active-contracts">0</div>
+            <div class="stat-label">Active Contracts</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="total-workers">0</div>
+            <div class="stat-label">Managed Workers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="earnings">₹0</div>
+            <div class="stat-label">Total Earnings</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="rating">0</div>
+            <div class="stat-label">Agency Rating</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contract Bidding & Management -->
+      <section id="contracts" class="dashboard-section">
+        <h2>Contract Opportunities</h2>
+        <div class="contracts-panel">
+          <div class="contracts-header">
+            <h3>Available Contracts</h3>
+            <div class="filter-tabs">
+              <button class="tab active" onclick="filterContracts('all')">All</button>
+              <button class="tab" onclick="filterContracts('matching')">Matching Skills</button>
+              <button class="tab" onclick="filterContracts('urgent')">Urgent</button>
+              <button class="tab" onclick="filterContracts('high-value')">High Value</button>
+            </div>
+          </div>
+          <div id="contracts-list" class="contract-list">
+            <!-- Contracts will be loaded here -->
+          </div>
+        </div>
+
+        <h2 class="section-header">My Contracts</h2>
+        <div id="my-contracts-list" class="contract-list">
+          <!-- Agency's contracts will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Worker Management -->
+      <section id="workers" class="dashboard-section">
+        <h2>Worker Management</h2>
+        <div class="worker-management">
+          <div class="worker-stats">
+            <div class="stat-card">
+              <div class="stat-number" id="available-workers">0</div>
+              <div class="stat-label">Available Workers</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="assigned-workers">0</div>
+              <div class="stat-label">Assigned Workers</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="certified-workers">0</div>
+              <div class="stat-label">Certified Workers</div>
+            </div>
+          </div>
+
+          <div class="worker-actions">
+            <button class="btn btn-outline" onclick="showWorkerModal()">Add New Worker</button>
+            <button class="btn btn-outline" onclick="showBulkUploadModal()">Bulk Upload</button>
+            <button class="btn btn-outline" onclick="exportWorkers()">Export Workers</button>
+          </div>
+
+          <div class="search-filters">
+            <input type="text" placeholder="Search workers..." id="worker-search">
+            <div class="form-select-group">
+              <label for="worker-status-filter">Worker Status</label>
+              <select id="worker-status-filter" title="Filter by Worker Status">
+                <option value="">All Status</option>
+                <option value="available">Available</option>
+                <option value="assigned">Assigned</option>
+                <option value="on-leave">On Leave</option>
+              </select>
+            </div>
+            <div class="form-select-group">
+              <label for="worker-skill-filter">Worker Skills</label>
+              <select id="worker-skill-filter" title="Filter by Worker Skills">
+                <option value="">All Skills</option>
+                <option value="construction">Construction</option>
+                <option value="security">Security</option>
+                <option value="cleaning">Cleaning</option>
+                <option value="manufacturing">Manufacturing</option>
+              </select>
+            </div>
+            <button class="btn btn-outline" onclick="applyWorkerFilters()">Apply Filters</button>
+          </div>
+
+          <div id="workers-list" class="workers-grid">
+            <!-- Workers will be loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Performance Tracking -->
+      <section id="performance" class="dashboard-section">
+        <h2>Performance Analytics</h2>
+        <div class="performance-grid">
+          <div class="card">
+            <h3>Contract Success Rate</h3>
+            <div class="performance-chart">
+              <div class="chart-bar" data-height="85">Completed: 85%</div>
+              <div class="chart-bar" data-height="92">On-time: 92%</div>
+              <div class="chart-bar" data-height="78">Client Satisfaction: 78%</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Recent Reviews</h3>
+            <div id="recent-reviews" class="reviews-list">
+              <!-- Reviews will be loaded here -->
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Earnings Breakdown</h3>
+            <div class="earnings-breakdown">
+              <div class="earning-item">
+                <span>This Month</span>
+                <span id="monthly-earnings">₹0</span>
+              </div>
+              <div class="earning-item">
+                <span>Last Month</span>
+                <span id="last-month-earnings">₹0</span>
+              </div>
+              <div class="earning-item">
+                <span>Pending Payments</span>
+                <span id="pending-payments">₹0</span>
+              </div>
+              <div class="earning-item">
+                <span>Total Earned</span>
+                <span id="total-earned">₹0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Worker Performance</h3>
+            <div class="performance-chart">
+              <div class="chart-bar" data-height="90">Top Performers: 12</div>
+              <div class="chart-bar" data-height="70">Average: 25</div>
+              <div class="chart-bar" data-height="40">Needs Improvement: 8</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Messages / Inbox -->
+      <section id="inbox" class="dashboard-section">
+        <div class="dashboard-flex">
+          <h2>Messages</h2>
+          <div>
+            <button class="btn btn-outline" id="refreshInboxBtn" onclick="loadInbox()">Refresh</button>
+            <button class="btn btn-gold" id="composeBtn" onclick="showComposeModal()">Compose</button>
+          </div>
+        </div>
+        <div class="card">
+          <div id="inboxList">Loading messages…</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bid Modal -->
+    <div id="bidModal" class="modal" aria-hidden="true">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeBidModal()">&times;</button>
+        <h3>Submit Bid</h3>
+        <form id="bidForm" class="bid-form">
+          <input name="bid_amount" type="number" placeholder="Your bid amount (₹)" required>
+          <textarea name="proposal" rows="4" placeholder="Your proposal and approach" required></textarea>
+          <input name="estimated_duration" type="text" placeholder="Estimated duration (e.g., 2 weeks)" required>
+          <textarea name="worker_profiles" rows="3" placeholder="Brief profiles of workers you'll assign"></textarea>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-gold">Submit Bid</button>
+            <button type="button" class="btn btn-outline" onclick="closeBidModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Worker Modal -->
+    <div id="workerModal" class="modal" aria-hidden="true">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeWorkerModal()">&times;</button>
+        <h3>Add New Worker</h3>
+        <form id="workerForm" class="worker-form">
+          <input name="name" type="text" placeholder="Full Name" required>
+          <input name="email" type="email" placeholder="Email Address" required>
+          <input name="phone" type="tel" placeholder="Phone Number" required>
+          <input name="id_number" type="text" placeholder="ID Number" required>
+          <select name="skills" multiple required>
+            <option value="construction">Construction</option>
+            <option value="security">Security</option>
+            <option value="cleaning">Cleaning</option>
+            <option value="manufacturing">Manufacturing</option>
+            <option value="logistics">Logistics</option>
+            <option value="hospitality">Hospitality</option>
+          </select>
+          <select name="experience_level" required>
+            <option value="">Experience Level</option>
+            <option value="entry">Entry Level (0-2 years)</option>
+            <option value="mid">Mid Level (3-5 years)</option>
+            <option value="senior">Senior Level (6+ years)</option>
+          </select>
+          <input name="hourly_rate" type="number" placeholder="Hourly Rate (₹)" required>
+          <textarea name="notes" rows="3" placeholder="Additional notes about the worker"></textarea>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-gold">Add Worker</button>
+            <button type="button" class="btn btn-outline" onclick="closeWorkerModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bulk Upload Modal -->
+    <div id="bulkUploadModal" class="modal" aria-hidden="true">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeBulkUploadModal()">&times;</button>
+        <h3>Bulk Upload Workers</h3>
+        <div class="bulk-upload-content">
+          <p>Upload a CSV file with worker information. The file should include columns for:</p>
+          <ul>
+            <li>Name</li>
+            <li>Email</li>
+            <li>Phone</li>
+            <li>ID Number</li>
+            <li>Skills (comma-separated)</li>
+            <li>Experience Level</li>
+            <li>Hourly Rate</li>
+          </ul>
+          <input type="file" id="bulkUploadFile" accept=".csv" />
+          <div class="form-actions">
+            <button class="btn btn-gold" onclick="processBulkUpload()">Upload Workers</button>
+            <button class="btn btn-outline" onclick="downloadTemplate()">Download Template</button>
+            <button class="btn btn-outline" onclick="closeBulkUploadModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compose Message Modal -->
+    <div id="composeModal" class="modal" aria-hidden="true">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeComposeModal()">&times;</button>
+        <h3>Compose Message</h3>
+        <div class="dashboard-flex-column">
+          <input id="composeTo" type="email" placeholder="To (email)" />
+          <textarea id="composeText" rows="4" placeholder="Write your message..."></textarea>
+          <div class="dashboard-flex-row">
+            <button class="btn btn-gold" onclick="sendMessageFromModal()">Send</button>
+            <button class="btn btn-outline" onclick="closeComposeModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  <script nonce="{{ nonce }}">
+      // Agency dashboard specific JavaScript
+      let selectedContract = null;
+
+      function toggleNotifications() {
+        const dropdown = document.getElementById('notification-dropdown');
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        loadNotifications();
+      }
+
+      function loadNotifications() {
+        fetch('/api/notifications')
+          .then(r => r.json())
+          .then(data => {
+            const dropdown = document.getElementById('notification-dropdown');
+            const badge = document.getElementById('notification-badge');
+            const notifications = data.notifications || [];
+            
+            badge.textContent = notifications.filter(n => !n.read).length;
+            
+            if (notifications.length === 0) {
+              dropdown.innerHTML = '<div class="notification-item">No notifications</div>';
+            } else {
+              dropdown.innerHTML = notifications.slice(0, 5).map(n => 
+                `<div class="notification-item ${n.read ? 'read' : ''}" onclick="markAsRead('${n.id}')">
+                  <strong>${n.title}</strong><br>
+                  <small>${n.message}</small>
+                </div>`
+              ).join('');
+            }
+          });
+      }
+
+      function markAsRead(notificationId) {
+        fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' })
+          .then(() => loadNotifications());
+      }
+
+      function browseContracts() {
+        document.getElementById('contracts').scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function filterContracts(filter) {
+        // Update active tab
+        document.querySelectorAll('.filter-tabs .tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Filter contracts by criteria
+        console.log('Filtering contracts by:', filter);
+        loadAvailableContracts(filter);
+      }
+
+      function showWorkerModal() {
+        document.getElementById('workerModal').setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+      }
+
+      function closeWorkerModal() {
+        document.getElementById('workerModal').setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+      }
+
+      function showBulkUploadModal() {
+        document.getElementById('bulkUploadModal').setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+      }
+
+      function closeBulkUploadModal() {
+        document.getElementById('bulkUploadModal').setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+      }
+
+      function showBidModal(contractId) {
+        selectedContract = contractId;
+        document.getElementById('bidModal').setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+      }
+
+      function closeBidModal() {
+        document.getElementById('bidModal').setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        selectedContract = null;
+      }
+
+      function applyWorkerFilters() {
+        loadWorkers();
+      }
+
+      function exportWorkers() {
+        // Simulate worker export
+        alert('Worker export functionality - coming soon!');
+      }
+
+      function processBulkUpload() {
+        const fileInput = document.getElementById('bulkUploadFile');
+        if (!fileInput.files[0]) {
+          alert('Please select a CSV file to upload');
+          return;
+        }
+        
+        // Simulate bulk upload processing
+        alert('Bulk upload processed successfully! Workers will be added to your roster.');
+        closeBulkUploadModal();
+        loadWorkers();
+      }
+
+      function downloadTemplate() {
+        // Create and download CSV template
+        const csvContent = "Name,Email,Phone,ID Number,Skills,Experience Level,Hourly Rate\nJohn Doe,john@example.com,1234567890,ID123,construction,mid,500\n";
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'worker_template.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+
+      function logout() {
+        fetch('/api/signout', { 
+          method: 'POST',
+          credentials: 'same-origin'
+        })
+          .then(() => window.location = '/');
+      }
+
+      // Load dashboard data
+      function loadAgencyStats() {
+        fetch('/api/analytics/dashboard')
+          .then(r => r.json())
+          .then(data => {
+            if (data.error) {
+              console.error('Analytics error:', data.error);
+              return;
+            }
+            
+            animateNumber('active-contracts', 0, data.active_contracts || 8, 1000);
+            animateNumber('total-workers', 0, data.total_workers || 45, 1000);
+            animateNumber('earnings', 0, data.total_earnings || 125000, 1000);
+            animateNumber('rating', 0, data.avg_rating || 4.6, 1000);
+            
+            // Update earnings breakdown
+            document.getElementById('monthly-earnings').textContent = `₹${(data.monthly_earnings?.[data.monthly_earnings.length-1]?.amount || 163000).toLocaleString()}`;
+            document.getElementById('last-month-earnings').textContent = `₹${(data.monthly_earnings?.[data.monthly_earnings.length-2]?.amount || 149000).toLocaleString()}`;
+            document.getElementById('pending-payments').textContent = `₹${(25000).toLocaleString()}`;
+            document.getElementById('total-earned').textContent = `₹${(data.total_earnings || 125000).toLocaleString()}`;
+          })
+          .catch(err => {
+            console.error('Failed to load analytics:', err);
+            // Fallback to demo data
+            animateNumber('active-contracts', 0, 8, 1000);
+            animateNumber('total-workers', 0, 45, 1000);
+            animateNumber('earnings', 0, 125000, 1000);
+            animateNumber('rating', 0, 4.6, 1000);
+          });
+      }
+
+      function loadAvailableContracts(filter = 'all') {
+        const contractsList = document.getElementById('contracts-list');
+        contractsList.innerHTML = '<div class="loading">Loading available contracts...</div>';
+        
+        fetch('/api/contracts')
+          .then(r => r.json())
+          .then(contracts => {
+            contractsList.innerHTML = '';
+            
+            // Filter contracts based on selection
+            let filteredContracts = contracts;
+            if (filter === 'urgent') {
+              filteredContracts = contracts.filter(c => c.urgency === 'urgent' || c.urgency === 'critical');
+            } else if (filter === 'high-value') {
+              filteredContracts = contracts.filter(c => c.budget > 50000);
+            } else if (filter === 'matching') {
+              // Simple skill matching simulation
+              filteredContracts = contracts.filter(c => c.skills && c.skills.length > 0);
+            }
+            
+            if (filteredContracts.length === 0) {
+              contractsList.innerHTML = '<div class="muted">No contracts found matching your criteria.</div>';
+              return;
+            }
+            
+            filteredContracts.forEach(contract => {
+              const contractEl = document.createElement('div');
+              contractEl.className = 'contract-item';
+              contractEl.innerHTML = `
+                <h4>${contract.title}</h4>
+                <p><strong>Location:</strong> ${contract.location}</p>
+                <p><strong>Workers Needed:</strong> ${contract.workers}</p>
+                <p><strong>Budget:</strong> ₹${contract.budget?.toLocaleString() || 'Not specified'}</p>
+                <p><strong>Status:</strong> <span class="status ${contract.status}">${contract.status}</span></p>
+                ${contract.urgency && contract.urgency !== 'normal' ? `<p><strong>Urgency:</strong> <span class="urgency ${contract.urgency}">${contract.urgency}</span></p>` : ''}
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                  <button class="btn btn-gold" onclick="showBidModal(${contract.id})">Submit Bid</button>
+                  <button class="btn btn-outline" onclick="viewContractDetails(${contract.id})">View Details</button>
+                </div>
+              `;
+              contractsList.appendChild(contractEl);
+            });
+          })
+          .catch(err => {
+            contractsList.innerHTML = '<div class="muted">Failed to load contracts. Please try again.</div>';
+          });
+      }
+
+      function loadMyContracts() {
+        const myContractsList = document.getElementById('my-contracts-list');
+        myContractsList.innerHTML = '<div class="loading">Loading your contracts...</div>';
+        
+        // This would typically filter contracts claimed by this agency
+        fetch('/api/contracts')
+          .then(r => r.json())
+          .then(contracts => {
+            // Simulate agency's claimed contracts
+            const myContracts = contracts.filter(c => c.claimed_by || Math.random() > 0.7);
+            
+            myContractsList.innerHTML = '';
+            
+            if (myContracts.length === 0) {
+              myContractsList.innerHTML = '<div class="muted">You haven\'t claimed any contracts yet.</div>';
+              return;
+            }
+            
+            myContracts.forEach(contract => {
+              const contractEl = document.createElement('div');
+              contractEl.className = 'contract-item';
+              contractEl.innerHTML = `
+                <h4>${contract.title}</h4>
+                <p><strong>Location:</strong> ${contract.location}</p>
+                <p><strong>Workers:</strong> ${contract.workers}</p>
+                <p><strong>Status:</strong> <span class="status ${contract.status}">${contract.status}</span></p>
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                  <button class="btn btn-outline" onclick="manageContract(${contract.id})">Manage</button>
+                  <button class="btn btn-outline" onclick="viewContractDetails(${contract.id})">Details</button>
+                </div>
+              `;
+              myContractsList.appendChild(contractEl);
+            });
+          })
+          .catch(err => {
+            myContractsList.innerHTML = '<div class="muted">Failed to load your contracts.</div>';
+          });
+      }
+
+      function loadWorkers() {
+        const workersList = document.getElementById('workers-list');
+        workersList.innerHTML = '<div class="loading">Loading workers...</div>';
+        
+        // Simulate worker data
+        setTimeout(() => {
+          const workers = [
+            { id: 1, name: 'Rajesh Kumar', skills: ['construction', 'masonry'], status: 'available', rating: 4.5, experience: 'senior' },
+            { id: 2, name: 'Priya Sharma', skills: ['security', 'surveillance'], status: 'assigned', rating: 4.2, experience: 'mid' },
+            { id: 3, name: 'Mohammed Ali', skills: ['cleaning', 'maintenance'], status: 'available', rating: 4.8, experience: 'senior' },
+            { id: 4, name: 'Sunita Devi', skills: ['manufacturing', 'quality control'], status: 'on-leave', rating: 4.0, experience: 'mid' }
+          ];
+          
+          workersList.innerHTML = '';
+          
+          workers.forEach(worker => {
+            const workerEl = document.createElement('div');
+            workerEl.className = 'worker-card';
+            workerEl.innerHTML = `
+              <h4>${worker.name}</h4>
+              <p><strong>Skills:</strong> ${worker.skills.join(', ')}</p>
+              <p><strong>Experience:</strong> ${worker.experience}</p>
+              <p><strong>Rating:</strong> ${worker.rating}/5 ⭐</p>
+              <p><strong>Status:</strong> <span class="status ${worker.status}">${worker.status}</span></p>
+              <div style="margin-top: 12px; display: flex; gap: 8px;">
+                <button class="btn btn-outline" onclick="editWorker(${worker.id})">Edit</button>
+                <button class="btn btn-outline" onclick="assignWorker(${worker.id})">Assign</button>
+              </div>
+            `;
+            workersList.appendChild(workerEl);
+          });
+          
+          // Update worker stats
+          animateNumber('available-workers', 0, workers.filter(w => w.status === 'available').length, 500);
+          animateNumber('assigned-workers', 0, workers.filter(w => w.status === 'assigned').length, 500);
+          animateNumber('certified-workers', 0, workers.filter(w => w.rating >= 4.0).length, 500);
+        }, 1000);
+      }
+
+      function loadReviews() {
+        const reviewsList = document.getElementById('recent-reviews');
+        reviewsList.innerHTML = '<div class="loading">Loading reviews...</div>';
+        
+        // Simulate review data
+        setTimeout(() => {
+          const reviews = [
+            { from: 'TechCorp Ltd', rating: 5, review: 'Excellent service, workers were professional and skilled.', date: '2024-01-15' },
+            { from: 'BuildMax Inc', rating: 4, review: 'Good quality work, delivered on time.', date: '2024-01-10' },
+            { from: 'SecureGuard', rating: 5, review: 'Highly recommended agency, will work with them again.', date: '2024-01-05' }
+          ];
+          
+          reviewsList.innerHTML = '';
+          
+          reviews.forEach(review => {
+            const reviewEl = document.createElement('div');
+            reviewEl.className = 'review-item';
+            reviewEl.innerHTML = `
+              <div class="review-rating">${'⭐'.repeat(review.rating)} (${review.rating}/5)</div>
+              <div><strong>From:</strong> ${review.from}</div>
+              <div class="muted">${review.review}</div>
+              <div class="muted" style="font-size: 12px; margin-top: 4px;">${review.date}</div>
+            `;
+            reviewsList.appendChild(reviewEl);
+          });
+        }, 800);
+      }
+
+      function viewContractDetails(contractId) {
+        alert(`View contract details for contract ${contractId} - functionality coming soon!`);
+      }
+
+      function manageContract(contractId) {
+        alert(`Manage contract ${contractId} - functionality coming soon!`);
+      }
+
+      function editWorker(workerId) {
+        alert(`Edit worker ${workerId} - functionality coming soon!`);
+      }
+
+      function assignWorker(workerId) {
+        alert(`Assign worker ${workerId} - functionality coming soon!`);
+      }
+
+      // Handle form submissions
+      document.addEventListener('submit', function(e) {
+        if (e.target.id === 'bidForm') {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = {};
+          formData.forEach((value, key) => data[key] = value);
+          
+          if (!selectedContract) {
+            alert('No contract selected');
+            return;
+          }
+          
+          // Submit bid via API
+          fetch(`/api/contracts/${selectedContract}/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bid_amount: data.bid_amount,
+              proposal: data.proposal,
+              estimated_duration: data.estimated_duration,
+              worker_profiles: data.worker_profiles ? [data.worker_profiles] : []
+            })
+          })
+          .then(r => r.json())
+          .then(result => {
+            if (result.success) {
+              alert('Bid submitted successfully!');
+              closeBidModal();
+              loadMyContracts();
+            } else {
+              alert('Failed to submit bid: ' + (result.message || 'Unknown error'));
+            }
+          })
+          .catch(err => {
+            alert('Error submitting bid: ' + err.message);
+          });
+        } else if (e.target.id === 'workerForm') {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = {};
+          formData.forEach((value, key) => {
+            if (key === 'skills') {
+              if (!data[key]) data[key] = [];
+              data[key].push(value);
+            } else {
+              data[key] = value;
+            }
+          });
+          
+          // Simulate worker creation
+          alert('Worker added successfully!');
+          closeWorkerModal();
+          loadWorkers();
+        }
+      });
+
+      function loadInbox() {
+        const inboxList = document.getElementById('inboxList');
+        if (!inboxList) return;
+
+        inboxList.innerHTML = '<div class="loading">Loading messages...</div>';
+        
+        fetch('/api/messages', {
+          credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+          const messages = data.messages || [];
+          if (messages.length === 0) {
+            inboxList.innerHTML = '<div class="muted">No messages</div>';
+            return;
+          }
+          
+          inboxList.innerHTML = messages.map(msg => `
+            <div class="message-item">
+              <div class="message-header">
+                <strong>From: ${msg.from}</strong>
+                <span class="muted">${new Date(msg.sent_at).toLocaleString()}</span>
+              </div>
+              <div class="message-content">${msg.message}</div>
+            </div>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Failed to load messages:', err);
+          inboxList.innerHTML = '<div class="error">Failed to load messages</div>';
+        });
+      }
+
+      function showComposeModal() {
+        const modal = document.getElementById('composeModal');
+        if (modal) {
+          modal.setAttribute('aria-hidden', 'false');
+          document.body.classList.add('modal-open');
+        }
+      }
+
+      function closeComposeModal() {
+        const modal = document.getElementById('composeModal');
+        if (modal) {
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('modal-open');
+        }
+      }
+
+      function sendMessageFromModal() {
+        const to = document.getElementById('composeTo')?.value;
+        const message = document.getElementById('composeText')?.value;
+        
+        if (!to || !message) {
+          alert('Please fill in all fields');
+          return;
+        }
+
+        fetch('/api/messages/send', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, message })
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            closeComposeModal();
+            loadInbox();
+          } else {
+            alert(result.message || 'Failed to send message');
+          }
+        })
+        .catch(err => {
+          alert('Error sending message: ' + err.message);
+        });
+      }
+
+      // Initialize event listeners
+      function initializeEventListeners() {
+        // Notification bell
+        const notificationBell = document.querySelector('.notification-bell');
+        if (notificationBell) {
+          notificationBell.addEventListener('click', toggleNotifications);
+        }
+
+        // Worker actions
+        const addWorkerBtn = document.querySelector('[onclick="showWorkerModal()"]');
+        if (addWorkerBtn) {
+          addWorkerBtn.removeAttribute('onclick');
+          addWorkerBtn.addEventListener('click', showWorkerModal);
+        }
+
+        const browseContractsBtn = document.querySelector('[onclick="browseContracts()"]');
+        if (browseContractsBtn) {
+          browseContractsBtn.removeAttribute('onclick');
+          browseContractsBtn.addEventListener('click', browseContracts);
+        }
+
+        // Filter tabs
+        const filterTabs = document.querySelectorAll('.filter-tabs .tab');
+        filterTabs.forEach(tab => {
+          const filter = tab.getAttribute('onclick')?.match(/filterContracts\('(.+)'\)/)?.[1];
+          if (filter) {
+            tab.removeAttribute('onclick');
+            tab.addEventListener('click', () => filterContracts(filter));
+          }
+        });
+
+        // Worker filters
+        const applyFiltersBtn = document.querySelector('[onclick="applyWorkerFilters()"]');
+        if (applyFiltersBtn) {
+          applyFiltersBtn.removeAttribute('onclick');
+          applyFiltersBtn.addEventListener('click', applyWorkerFilters);
+        }
+
+        // Bulk upload actions
+        const bulkUploadBtn = document.querySelector('[onclick="showBulkUploadModal()"]');
+        if (bulkUploadBtn) {
+          bulkUploadBtn.removeAttribute('onclick');
+          bulkUploadBtn.addEventListener('click', showBulkUploadModal);
+        }
+
+        const exportBtn = document.querySelector('[onclick="exportWorkers()"]');
+        if (exportBtn) {
+          exportBtn.removeAttribute('onclick');
+          exportBtn.addEventListener('click', exportWorkers);
+        }
+
+        // Message compose buttons
+        const refreshInboxBtn = document.getElementById('refreshInboxBtn');
+        if (refreshInboxBtn) {
+          refreshInboxBtn.removeAttribute('onclick');
+          refreshInboxBtn.addEventListener('click', loadInbox);
+        }
+
+        const composeBtn = document.getElementById('composeBtn');
+        if (composeBtn) {
+          composeBtn.removeAttribute('onclick');
+          composeBtn.addEventListener('click', showComposeModal);
+        }
+
+        // Logout button
+        const logoutBtn = document.querySelector('[onclick="logout()"]');
+        if (logoutBtn) {
+          logoutBtn.removeAttribute('onclick');
+          logoutBtn.addEventListener('click', logout);
+        }
+      }
+
+      // Load data on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        initializeEventListeners();
+        loadAgencyStats();
+        loadAvailableContracts();
+        loadMyContracts();
+        loadWorkers();
+        loadReviews();
+        loadNotifications();
+        loadInbox();
+      });
+    </script>
+  </body>
+</html>

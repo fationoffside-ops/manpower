@@ -1,0 +1,71 @@
+/* Dashboard Charts */
+.chart-container {
+    margin: 20px 0;
+}
+
+.chart-bar {
+    background: #007bff;
+    color: #fff;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.chart-bar[data-height="40"] { height: 40%; }
+.chart-bar[data-height="55"] { height: 55%; }
+.chart-bar[data-height="60"] { height: 60%; }
+.chart-bar[data-height="65"] { height: 65%; }
+.chart-bar[data-height="70"] { height: 70%; }
+.chart-bar[data-height="75"] { height: 75%; }
+.chart-bar[data-height="78"] { height: 78%; }
+.chart-bar[data-height="80"] { height: 80%; }
+.chart-bar[data-height="85"] { height: 85%; }
+.chart-bar[data-height="90"] { height: 90%; }
+.chart-bar[data-height="92"] { height: 92%; }
+.chart-bar[data-height="100"] { height: 100%; }
+
+/* Dashboard Layout */
+.dashboard-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dashboard-flex-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.dashboard-flex-row {
+    display: flex;
+    gap: 8px;
+}
+
+/* Section Headers */
+.section-header {
+    margin-top: 40px;
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+    display: none;
+}
+
+.notification-dropdown.show {
+    display: block;
+}
+
+/* Form Controls */
+.form-select-group {
+    margin: 10px 0;
+}
+
+.form-select-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}

@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Worker Dashboard · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand"><div class="logo">MP</div><div class="brand-title">Manpower</div></div>
+        <nav>
+          <a href="#jobs">Jobs</a>
+          <a href="#profile">Profile</a>
+          <a href="#shifts">Shifts</a>
+        </nav>
+        <div class="actions">
+          <a href="/marketplace" class="btn btn-gold">Marketplace</a>
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard">
+      <div class="dashboard-header">
+        <div>
+          <h1>Worker Dashboard</h1>
+          <p class="muted">Find opportunities, manage your profile, and track your career progress</p>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-gold" onclick="browseJobs()">Browse Jobs</button>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-overview">
+        <div class="stat-card">
+          <div class="stat-number" id="applications-sent">0</div>
+          <div class="stat-label">Applications Sent</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="interviews-scheduled">0</div>
+          <div class="stat-label">Interviews Scheduled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="total-earnings">₹0</div>
+          <div class="stat-label">Total Earnings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="worker-rating">0</div>
+          <div class="stat-label">Your Rating</div>
+        </div>
+      </div>
+
+      <!-- Job Applications -->
+      <section id="jobs" class="dashboard-section">
+        <h2>Job Opportunities</h2>
+        <div class="jobs-panel">
+          <div class="jobs-header">
+            <h3>Available Jobs</h3>
+            <div class="filter-tabs">
+              <button class="tab active" onclick="filterJobs('all')">All Jobs</button>
+              <button class="tab" onclick="filterJobs('matching')">Matching Skills</button>
+              <button class="tab" onclick="filterJobs('urgent')">Urgent</button>
+              <button class="tab" onclick="filterJobs('nearby')">Nearby</button>
+            </div>
+          </div>
+          <div id="jobs-list" class="jobs-list">
+            <!-- Jobs will be loaded here -->
+          </div>
+        </div>
+
+        <h2 class="section-header">My Applications</h2>
+        <div id="my-applications-list" class="applications-list">
+          <!-- Worker's applications will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Messages / Inbox -->
+      <section id="inbox" class="dashboard-section">
+        <div class="dashboard-flex">
+          <h2>Messages</h2>
+          <div>
+            <button class="btn btn-outline" id="refreshInboxBtn" onclick="loadInbox()">Refresh</button>
+            <button class="btn btn-gold" id="composeBtn" onclick="showComposeModal()">Compose</button>
+          </div>
+        </div>
+        <div class="card">
+          <div id="inboxList">Loading messages…</div>
+        </div>
+      </section>
+
+      <!-- Compose Message Modal -->
+      <div id="composeModal" class="modal" aria-hidden="true">
+        <div class="modal-panel">
+          <button class="modal-close" onclick="closeComposeModal()">&times;</button>
+          <h3>Compose Message</h3>
+          <div class="dashboard-flex-column">
+            <input id="composeTo" type="email" placeholder="To (email)" />
+            <textarea id="composeText" rows="4" placeholder="Write your message..."></textarea>
+            <div class="dashboard-flex-row">
+              <button class="btn btn-gold" onclick="sendMessageFromModal()">Send</button>
+              <button class="btn btn-outline" onclick="closeComposeModal()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Building -->
+      <section id="profile" class="dashboard-section">
+        <h2>Profile Management</h2>
+        <div class="profile-management">
+          <div class="profile-stats">
+            <div class="stat-card">
+              <div class="stat-number" id="profile-completion">0%</div>
+              <div class="stat-label">Profile Complete</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="skills-count">0</div>
+              <div class="stat-label">Skills Listed</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="certifications-count">0</div>
+              <div class="stat-label">Certifications</div>
+            </div>
+          </div>
+
+          <div class="profile-sections">
+            <div class="card">
+              <h3>Personal Information</h3>
+              <div class="profile-form">
+                <input type="text" placeholder="Full Name" id="full-name">
+                <input type="email" placeholder="Email" id="email" disabled>
+                <input type="tel" placeholder="Phone Number" id="phone">
+                <input type="text" placeholder="Location" id="location">
+                <button class="btn btn-outline" onclick="updatePersonalInfo()">Update Info</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Skills & Experience</h3>
+              <div class="skills-section">
+                <div id="skills-list" class="skills-tags">
+                  <!-- Skills will be loaded here -->
+                </div>
+                <div class="add-skill">
+                  <input type="text" placeholder="Add a skill" id="new-skill">
+                  <button class="btn btn-outline" onclick="addSkill()">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Work History</h3>
+              <div id="work-history" class="work-history">
+                <!-- Work history will be loaded here -->
+              </div>
+              <button class="btn btn-outline" onclick="addWorkExperience()">Add Experience</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Shift Tracking -->
+      <section id="shifts" class="dashboard-section">
+        <h2>Shift Management</h2>
+        <div class="shift-management">
+          <div class="shift-stats">
+            <div class="stat-card">
+              <div class="stat-number" id="upcoming-shifts">0</div>
+              <div class="stat-label">Upcoming Shifts</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="hours-this-week">0</div>
+              <div class="stat-label">Hours This Week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="pending-payments">₹0</div>
+              <div class="stat-label">Pending Payments</div>
+            </div>
+          </div>
+
+          <div class="shift-calendar">
+            <h3>This Week's Schedule</h3>
+            <div id="weekly-schedule" class="schedule-grid">
+              <!-- Weekly schedule will be loaded here -->
+            </div>
+          </div>
+
+          <div class="time-tracking">
+            <h3>Time Tracking</h3>
+            <div class="clock-controls">
+              <button class="btn btn-gold" id="clock-in-btn" onclick="clockIn()">Clock In</button>
+              <button class="btn btn-outline" id="clock-out-btn" onclick="clockOut()" disabled>Clock Out</button>
+              <div class="current-shift">
+                <span>Current shift: </span>
+                <span id="shift-duration">Not clocked in</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Performance & Reviews -->
+      <section class="dashboard-section">
+        <h2>Performance & Reviews</h2>
+        <div class="performance-overview">
+          <div class="card">
+            <h3>Recent Reviews</h3>
+            <div id="worker-reviews" class="reviews-list">
+              <!-- Reviews will be loaded here -->
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Achievement Badges</h3>
+            <div id="achievement-badges" class="badges-grid">
+              <!-- Badges will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Application Modal -->
+    <div id="applicationModal" class="modal">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeApplicationModal()">&times;</button>
+        <h3>Apply for Job</h3>
+        <form id="applicationForm" class="application-form">
+          <textarea name="cover_letter" rows="4" placeholder="Why are you interested in this position?" required></textarea>
+          <input name="expected_salary" type="number" placeholder="Expected salary (₹)" required>
+          <input name="availability" type="text" placeholder="Your availability" required>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-gold">Submit Application</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  <script nonce="{{ nonce }}">
+      // Worker dashboard specific JavaScript
+      let currentShiftStart = null;
+      let shiftTimer = null;
+
+      function browseJobs() {
+        window.location = '/#contracts';
+      }
+
+      function filterJobs(filter) {
+        console.log('Filtering jobs by:', filter);
+      }
+
+      function updatePersonalInfo() {
+        alert('Personal information updated successfully!');
+      }
+
+      function addSkill() {
+        const skillInput = document.getElementById('new-skill');
+        const skill = skillInput.value.trim();
+        if (skill) {
+          const skillsContainer = document.getElementById('skills-list');
+          const skillTag = document.createElement('span');
+          skillTag.className = 'skill-tag';
+          skillTag.textContent = skill;
+          skillsContainer.appendChild(skillTag);
+          skillInput.value = '';
+        }
+      }
+
+      function addWorkExperience() {
+        alert('Add work experience functionality - coming soon!');
+      }
+
+      function showApplicationModal(jobId) {
+        document.getElementById('applicationModal').setAttribute('aria-hidden', 'false');
+        document.getElementById('applicationForm').dataset.jobId = jobId;
+      }
+
+      function closeApplicationModal() {
+        document.getElementById('applicationModal').setAttribute('aria-hidden', 'true');
+      }
+
+      function clockIn() {
+        currentShiftStart = new Date();
+        document.getElementById('clock-in-btn').disabled = true;
+        document.getElementById('clock-out-btn').disabled = false;
+        
+        shiftTimer = setInterval(updateShiftDuration, 1000);
+        updateShiftDuration();
+      }
+
+      function clockOut() {
+        if (currentShiftStart) {
+          clearInterval(shiftTimer);
+          const duration = new Date() - currentShiftStart;
+          const hours = Math.floor(duration / (1000 * 60 * 60));
+          const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+          
+          alert(`Shift completed! Duration: ${hours}h ${minutes}m`);
+          
+          currentShiftStart = null;
+          document.getElementById('clock-in-btn').disabled = false;
+          document.getElementById('clock-out-btn').disabled = true;
+          document.getElementById('shift-duration').textContent = 'Not clocked in';
+        }
+      }
+
+      function updateShiftDuration() {
+        if (currentShiftStart) {
+          const duration = new Date() - currentShiftStart;
+          const hours = Math.floor(duration / (1000 * 60 * 60));
+          const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((duration % (1000 * 60)) / 1000);
+          
+          document.getElementById('shift-duration').textContent =
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+      }
+
+      function logout() {
+        fetch('/api/signout', { 
+          method: 'POST',
+          credentials: 'same-origin'
+        })
+          .then(() => window.location = '/');
+      }
+
+      function loadInbox() {
+        const inboxList = document.getElementById('inboxList');
+        if (!inboxList) return;
+
+        inboxList.innerHTML = '<div class="loading">Loading messages...</div>';
+        
+        fetch('/api/messages', {
+          credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+          const messages = data.messages || [];
+          if (messages.length === 0) {
+            inboxList.innerHTML = '<div class="muted">No messages</div>';
+            return;
+          }
+          
+          inboxList.innerHTML = messages.map(msg => `
+            <div class="message-item">
+              <div class="message-header">
+                <strong>From: ${msg.from}</strong>
+                <span class="muted">${new Date(msg.sent_at).toLocaleString()}</span>
+              </div>
+              <div class="message-content">${msg.message}</div>
+            </div>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Failed to load messages:', err);
+          inboxList.innerHTML = '<div class="error">Failed to load messages</div>';
+        });
+      }
+
+      function showComposeModal() {
+        const modal = document.getElementById('composeModal');
+        if (modal) {
+          modal.setAttribute('aria-hidden', 'false');
+          document.body.classList.add('modal-open');
+        }
+      }
+
+      function closeComposeModal() {
+        const modal = document.getElementById('composeModal');
+        if (modal) {
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('modal-open');
+        }
+      }
+
+      function sendMessageFromModal() {
+        const to = document.getElementById('composeTo')?.value;
+        const message = document.getElementById('composeText')?.value;
+        
+        if (!to || !message) {
+          alert('Please fill in all fields');
+          return;
+        }
+
+        fetch('/api/messages/send', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, message })
+        })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            closeComposeModal();
+            loadInbox();
+          } else {
+            alert(result.message || 'Failed to send message');
+          }
+        })
+        .catch(err => {
+          alert('Error sending message: ' + err.message);
+        });
+      }
+
+      // Initialize event listeners
+      function initializeEventListeners() {
+        // Logout button
+        const logoutBtn = document.querySelector('[onclick="logout()"]');
+        if (logoutBtn) {
+          logoutBtn.removeAttribute('onclick');
+          logoutBtn.addEventListener('click', logout);
+        }
+
+        // Browse jobs button
+        const browseJobsBtn = document.querySelector('[onclick="browseJobs()"]');
+        if (browseJobsBtn) {
+          browseJobsBtn.removeAttribute('onclick');
+          browseJobsBtn.addEventListener('click', browseJobs);
+        }
+
+        // Filter tabs
+        const filterTabs = document.querySelectorAll('.filter-tabs .tab');
+        filterTabs.forEach(tab => {
+          const filter = tab.getAttribute('onclick')?.match(/filterJobs\('(.+)'\)/)?.[1];
+          if (filter) {
+            tab.removeAttribute('onclick');
+            tab.addEventListener('click', () => filterJobs(filter));
+          }
+        });
+
+        // Inbox buttons
+        const refreshInboxBtn = document.getElementById('refreshInboxBtn');
+        if (refreshInboxBtn) {
+          refreshInboxBtn.removeAttribute('onclick');
+          refreshInboxBtn.addEventListener('click', loadInbox);
+        }
+
+        const composeBtn = document.getElementById('composeBtn');
+        if (composeBtn) {
+          composeBtn.removeAttribute('onclick');
+          composeBtn.addEventListener('click', showComposeModal);
+        }
+
+        // Clock buttons
+        const clockInBtn = document.getElementById('clock-in-btn');
+        if (clockInBtn) {
+          clockInBtn.removeAttribute('onclick');
+          clockInBtn.addEventListener('click', clockIn);
+        }
+
+        const clockOutBtn = document.getElementById('clock-out-btn');
+        if (clockOutBtn) {
+          clockOutBtn.removeAttribute('onclick');
+          clockOutBtn.addEventListener('click', clockOut);
+        }
+      }
+
+      // Load dashboard data
+      document.addEventListener('DOMContentLoaded', function() {
+        initializeEventListeners();
+        loadWorkerStats();
+        loadJobs();
+        loadApplications();
+        loadProfile();
+        loadShifts();
+        loadReviews();
+        loadInbox();
+      });
+
+      function loadWorkerStats() {
+        animateNumber('applications-sent', 0, 12, 1000);
+        animateNumber('interviews-scheduled', 0, 3, 1000);
+        animateNumber('total-earnings', 0, 45000, 1000);
+        animateNumber('worker-rating', 0, 4.3, 1000);
+      }
+
+      function loadJobs() {
+        const jobsList = document.getElementById('jobs-list');
+        jobsList.innerHTML = '<div class="loading">Loading available jobs...</div>';
+      }
+
+      function loadApplications() {
+        const applicationsList = document.getElementById('my-applications-list');
+        applicationsList.innerHTML = '<div class="loading">Loading your applications...</div>';
+      }
+
+      function loadProfile() {
+        animateNumber('profile-completion', 0, 75, 1000);
+        animateNumber('skills-count', 0, 8, 1000);
+        animateNumber('certifications-count', 0, 3, 1000);
+      }
+
+      function loadShifts() {
+        animateNumber('upcoming-shifts', 0, 5, 1000);
+        animateNumber('hours-this-week', 0, 32, 1000);
+        animateNumber('pending-payments', 0, 8500, 1000);
+      }
+
+      function loadReviews() {
+        const reviewsList = document.getElementById('worker-reviews');
+        reviewsList.innerHTML = '<div class="loading">Loading reviews...</div>';
+      }
+    </script>
+  </body>
+</html>

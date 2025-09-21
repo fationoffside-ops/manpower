@@ -1,0 +1,36 @@
+# Environment variables
+.env
+.env[.-]*
+!.env.example
+
+# Dependencies
+node_modules/
+dist/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+ENV/
+
+# Development
+.vscode/
+*.code-workspace
+*.sqlite
+*.db
+
+# Logs and data
+logs/
+*.log
+uploads/
+data/
+flask_session/
+
+# System files
+.DS_Store
+Thumbs.db
+
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md

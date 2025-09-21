@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agency Marketplace · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header" role="banner">
+      <div class="container header-inner">
+        <div class="brand" role="group">
+          <div class="logo" role="img" aria-label="MP Logo">MP</div>
+          <div>
+            <div class="brand-title">Manpower</div>
+            <div class="brand-sub">Agency Marketplace</div>
+          </div>
+        </div>
+        <nav class="nav" role="navigation" aria-label="Main navigation">
+          <a href="#browse">Browse</a>
+          <a href="#my-listings">My Listings</a>
+          <a href="#trades">Trade History</a>
+        </nav>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="logout()" aria-label="Log out of your account">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard" role="main">
+      <div class="dashboard-header">
+        <div>
+          <h1>Agency Marketplace</h1>
+          <p class="muted">Contractors can find and hire verified agencies. Browse agencies, review profiles, and initiate contact or contracts.</p>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-outline" onclick="showListingModal()">List Recruit</button>
+          <button class="btn btn-gold" onclick="showPurchaseModal()">Quick Purchase</button>
+        </div>
+      </div>
+
+      <!-- Marketplace Stats -->
+      <div class="stats-overview" role="region" aria-label="Marketplace Statistics">
+        <div class="stat-card" role="group" aria-labelledby="active-listings-label">
+          <div class="stat-number" id="active-listings" aria-live="polite">0</div>
+          <div class="stat-label" id="active-listings-label">Active Listings</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="completed-trades-label">
+          <div class="stat-number" id="completed-trades" aria-live="polite">0</div>
+          <div class="stat-label" id="completed-trades-label">Completed Trades</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="avg-price-label">
+          <div class="stat-number" id="avg-price" aria-live="polite">₹0</div>
+          <div class="stat-label" id="avg-price-label">Average Price</div>
+        </div>
+        <div class="stat-card" role="group" aria-labelledby="success-rate-label">
+          <div class="stat-number" id="success-rate" aria-live="polite">0%</div>
+          <div class="stat-label" id="success-rate-label">Success Rate</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <section class="dashboard-section">
+        <div class="marketplace-filters">
+          <div class="form-group">
+            <label for="skill-search" class="visually-hidden">Search by Skills</label>
+            <input type="search" placeholder="Search by skills..." id="skill-search" name="skill-search" aria-label="Search recruits by skills">
+          </div>
+          <div class="form-select-group">
+            <label for="experience-filter">Experience Level</label>
+            <select id="experience-filter" title="Filter by Experience Level">
+              <option value="">All Experience Levels</option>
+              <option value="entry">Entry Level</option>
+              <option value="mid">Mid Level</option>
+              <option value="senior">Senior Level</option>
+            </select>
+          </div>
+          <div class="form-select-group">
+            <label for="location-filter">Location</label>
+            <select id="location-filter" title="Filter by Location">
+              <option value="">All Locations</option>
+              <option value="bangalore">Bangalore</option>
+              <option value="delhi">Delhi</option>
+              <option value="mumbai">Mumbai</option>
+              <option value="chennai">Chennai</option>
+            </select>
+          </div>
+          <div class="form-select-group">
+            <label for="price-filter">Price Range</label>
+            <select id="price-filter" title="Filter by Price Range">
+              <option value="">All Prices</option>
+              <option value="0-10000">₹0 - ₹10,000</option>
+              <option value="10000-25000">₹10,000 - ₹25,000</option>
+              <option value="25000-50000">₹25,000 - ₹50,000</option>
+              <option value="50000+">₹50,000+</option>
+            </select>
+          </div>
+          <button class="btn btn-outline" onclick="applyFilters()">Apply Filters</button>
+        </div>
+      </section>
+
+      <!-- Available Agencies (for contractors) or Recruits/Contracts -->
+      <section id="browse" class="dashboard-section" aria-labelledby="section-title">
+        {% if role == 'contractors' %}
+        <h2 id="section-title">Agencies</h2>
+        <div id="marketplaceList" class="agencies-grid" role="list" aria-label="List of available agencies">
+          {% if agencies and agencies|length > 0 %}
+            {% for a in agencies %}
+              <div class="agency-card" role="listitem">
+                <div class="agency-header">
+                  <div class="agency-logo" role="img" aria-label="{{ a.get('company', '')[:1] }}">{{ a.get('company', '')[:1] }}</div>
+                  <div>
+                    <div class="agency-name">{{ a.get('company') or a.get('email') }}</div>
+                    <div class="agency-meta" aria-label="Agency location and rating">{{ a.get('city', 'Unknown') }} · Rating: {{ a.get('rating', 0) }}</div>
+                  </div>
+                </div>
+                <div class="agency-body">
+                  <p class="muted">{{ a.get('bio', '') or a.get('description', '') or '' }}</p>
+                </div>
+                <div class="agency-actions">
+                  <a class="btn btn-outline" href="/agency/{{ a.get('email') }}" aria-label="View {{ a.get('company') or a.get('email') }}'s profile">View Profile</a>
+                  <button class="btn btn-gold contact-btn" data-email="{{ a.get('email')|e }}" aria-label="Contact {{ a.get('company') or a.get('email') }}">Contact Agency</button>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted">No agencies found.</p>
+          {% endif %}
+        </div>
+        {% else %}
+        <h2>Available Recruits</h2>
+        <div id="marketplaceList" class="recruits-grid">
+          <!-- Recruits will be loaded here -->
+        </div>
+        {% endif %}
+      </section>
+
+      <!-- My Listings -->
+      <section id="my-listings" class="dashboard-section">
+        <h2>My Listings</h2>
+        <div id="my-listings-grid" class="recruits-grid">
+          <!-- User's listings will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Trade History -->
+      <section id="trades" class="dashboard-section">
+        <h2>Trade History</h2>
+        <div id="trade-history" class="trades-list">
+          <!-- Trade history will be loaded here -->
+        </div>
+      </section>
+    </main>
+
+    <!-- List Recruit Modal -->
+    <div id="listingModal" class="modal" role="dialog" aria-hidden="true" aria-modal="true" aria-labelledby="listing-modal-title">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeListingModal()" aria-label="Close modal">&times;</button>
+        <h3 id="listing-modal-title">List a Recruit</h3>
+        <form id="listingForm" class="recruit-form" role="form" aria-label="Recruit listing form">
+          <div class="form-group">
+            <label for="recruit-name">Recruit Name</label>
+            <input id="recruit-name" name="name" type="text" placeholder="Full name" required aria-label="Enter recruit's full name">
+          </div>
+          <div class="form-group">
+            <label for="recruit-skills">Skills</label>
+            <select id="recruit-skills" name="skills" multiple title="Select relevant skills" required aria-label="Recruit's skills" aria-multiselectable="true">
+              <option value="construction">Construction</option>
+              <option value="security">Security</option>
+              <option value="cleaning">Cleaning</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="logistics">Logistics</option>
+              <option value="hospitality">Hospitality</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="recruit-experience">Experience Level</label>
+            <select id="recruit-experience" name="experience" title="Select experience level" required aria-label="Recruit's experience level">
+              <option value="">Select experience</option>
+              <option value="entry">Entry Level (0-2 years)</option>
+              <option value="mid">Mid Level (3-5 years)</option>
+              <option value="senior">Senior Level (6+ years)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="recruit-location">Location</label>
+            <input id="recruit-location" name="location" type="text" placeholder="Current location" required aria-label="Enter recruit's current location">
+          </div>
+          <div class="form-group">
+            <label for="recruit-price">Asking Price (₹)</label>
+            <input id="recruit-price" name="price" type="number" placeholder="Your asking price" required aria-label="Enter asking price in rupees" min="0">
+          </div>
+          <div class="form-group">
+            <label for="recruit-description">Description</label>
+            <textarea id="recruit-description" name="description" rows="3" placeholder="Brief description of the recruit's capabilities" aria-label="Enter recruit's capabilities and description"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-gold">List Recruit</button>
+            <button type="button" class="btn btn-outline" onclick="closeListingModal()">Cancel</button>
+          </div>
+          <div id="listing-form-errors" class="form-errors visually-hidden" role="alert" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchaseModal" class="modal" role="dialog" aria-hidden="true" aria-modal="true" aria-labelledby="purchase-modal-title">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closePurchaseModal()" aria-label="Close modal">&times;</button>
+        <h3 id="purchase-modal-title">Purchase Recruit</h3>
+        <div id="purchase-details">
+          <!-- Purchase details will be populated here -->
+        </div>
+        <div class="purchase-summary">
+          <h4>Purchase Summary</h4>
+          <div class="purchase-details">
+            <div class="detail-row">
+              <span>Recruit Price:</span>
+              <span id="recruit-price">₹0</span>
+            </div>
+            <div class="detail-row">
+              <span>Platform Fee (5%):</span>
+              <span id="platform-fee">₹0</span>
+            </div>
+            <div class="detail-row total">
+              <span>Total Amount:</span>
+              <span class="value" id="total-amount">₹0</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-gold" onclick="confirmPurchase()">Confirm Purchase</button>
+          <button class="btn btn-outline" onclick="closePurchaseModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  <script nonce="{{ nonce }}">
+      // Marketplace specific JavaScript
+      let selectedRecruit = null;
+
+      function showListingModal() {
+        document.getElementById('listingModal').setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+      }
+
+      function closeListingModal() {
+        document.getElementById('listingModal').setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+      }
+
+      function showPurchaseModal(recruitData = null) {
+        if (recruitData) {
+          selectedRecruit = recruitData;
+          updatePurchaseModal(recruitData);
+        }
+        document.getElementById('purchaseModal').setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+      }
+
+      function closePurchaseModal() {
+        document.getElementById('purchaseModal').setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        selectedRecruit = null;
+      }
+
+      function updatePurchaseModal(recruit) {
+        const price = recruit.price || 0;
+        const platformFee = Math.round(price * 0.05);
+        const total = price + platformFee;
+
+        document.getElementById('recruit-price').textContent = `₹${price.toLocaleString()}`;
+        document.getElementById('platform-fee').textContent = `₹${platformFee.toLocaleString()}`;
+        document.getElementById('total-amount').textContent = `₹${total.toLocaleString()}`;
+      }
+
+      function confirmPurchase() {
+        if (!selectedRecruit) return;
+        
+        // Simulate purchase process
+        alert(`Purchase confirmed for ${selectedRecruit.name}! Trade will be processed within 24 hours.`);
+        closePurchaseModal();
+        loadMarketplaceData();
+      }
+
+      function applyFilters() {
+        // Apply marketplace filters
+        loadMarketplaceData();
+      }
+
+      function logout() {
+        fetch('/api/signout', { method: 'POST' })
+          .then(() => window.location = '/');
+      }
+
+      // Load marketplace data
+      function loadMarketplaceData() {
+        // Load stats
+        animateNumber('active-listings', 0, 45, 1000);
+        animateNumber('completed-trades', 0, 128, 1000);
+        animateNumber('avg-price', 0, 18500, 1000);
+        animateNumber('success-rate', 0, 94, 1000);
+
+        // Load marketplace listings
+        loadMarketplaceActions('marketplaceList');
+      }
+
+      // Handle listing form submission
+      document.addEventListener('submit', function(e) {
+        if (e.target.id === 'listingForm') {
+          e.preventDefault();
+          const form = e.target;
+          const formData = new FormData(form);
+          const errorContainer = document.getElementById('listing-form-errors');
+          const errors = [];
+
+          // Custom validation
+          const name = formData.get('name');
+          const skills = formData.getAll('skills');
+          const experience = formData.get('experience');
+          const location = formData.get('location');
+          const price = formData.get('price');
+          
+          if (!name || name.trim().length < 2) {
+            errors.push('Please enter a valid name (at least 2 characters)');
+            form.elements['name'].setAttribute('aria-invalid', 'true');
+          } else {
+            form.elements['name'].removeAttribute('aria-invalid');
+          }
+
+          if (skills.length === 0) {
+            errors.push('Please select at least one skill');
+            form.elements['skills'].setAttribute('aria-invalid', 'true');
+          } else {
+            form.elements['skills'].removeAttribute('aria-invalid');
+          }
+
+          if (!experience) {
+            errors.push('Please select an experience level');
+            form.elements['experience'].setAttribute('aria-invalid', 'true');
+          } else {
+            form.elements['experience'].removeAttribute('aria-invalid');
+          }
+
+          if (!location || location.trim().length < 2) {
+            errors.push('Please enter a valid location');
+            form.elements['location'].setAttribute('aria-invalid', 'true');
+          } else {
+            form.elements['location'].removeAttribute('aria-invalid');
+          }
+
+          if (!price || price <= 0) {
+            errors.push('Please enter a valid price');
+            form.elements['price'].setAttribute('aria-invalid', 'true');
+          } else {
+            form.elements['price'].removeAttribute('aria-invalid');
+          }
+
+          if (errors.length > 0) {
+            errorContainer.innerHTML = '<ul role="list">' + errors.map(error => '<li>' + error + '</li>').join('') + '</ul>';
+            errorContainer.classList.remove('visually-hidden');
+            errorContainer.focus();
+            return;
+          }
+
+          errorContainer.classList.add('visually-hidden');
+          
+          const data = {};
+          formData.forEach((value, key) => {
+            if (key === 'skills') {
+              if (!data[key]) data[key] = [];
+              data[key].push(value);
+            } else {
+              data[key] = value;
+            }
+          });
+          
+          // Simulate listing creation
+          closeListingModal();
+          const successMessage = document.createElement('div');
+          successMessage.setAttribute('role', 'alert');
+          successMessage.setAttribute('aria-live', 'polite');
+          successMessage.textContent = 'Recruit listed successfully! It will be reviewed and published within 2 hours.';
+          document.body.appendChild(successMessage);
+          setTimeout(() => successMessage.remove(), 5000);
+          loadMarketplaceData();
+        }
+      });
+
+      // Delegate contact button clicks to avoid inline JS templating issues
+      function bindAgencyActions() {
+        document.querySelectorAll('.contact-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var email = btn.getAttribute('data-email');
+            if (!email) return;
+            window.location = '/agency/' + encodeURIComponent(email);
+          });
+        });
+      }
+
+      // Initialize marketplace
+      document.addEventListener('DOMContentLoaded', function() {
+        loadMarketplaceData();
+        bindAgencyActions();
+      });
+    </script>
+  </body>
+</html>

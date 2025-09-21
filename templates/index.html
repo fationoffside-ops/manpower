@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Manpower — Premium Agency Marketplace</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta name="description" content="Premium manpower & agency marketplace — curated, verified, and delivery-driven. For enterprises that expect excellence." />
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <div class="brand">
+                <div class="logo">MP</div>
+                <div>
+                    <div class="brand-title">Manpower</div>
+                    <div class="brand-sub">Elite Agency Marketplace</div>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="#how">How it works</a>
+                <a href="#contracts">Contracts</a>
+                <a href="#agencies">Agencies</a>
+            </nav>
+            <div class="actions">
+                <button class="btn btn-ghost" data-auth-action="signin">Sign In</button>
+                <button class="btn btn-gold" data-auth-action="signup">Sign Up</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="landing-page">
+        <section class="hero">
+            <div class="container hero-inner">
+                <div class="hero-copy">
+                    <h1>Premium Manpower Solutions</h1>
+                    <p class="lead">Discover a curated marketplace of verified agencies and top-tier talent. Our platform connects businesses with skilled professionals, ensuring excellence in every engagement.</p>
+                    <div class="hero-ctas">
+                        <button class="btn btn-gold" data-auth-action="signup">Get Started</button>
+                        <button class="btn btn-outline" data-modal-open="how">Learn More</button>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-card">
+                        <div class="logo hero-logo">MP</div>
+                        <div class="stat">
+                            <div class="stat-value">500+</div>
+                            <div class="stat-label">Verified Agencies</div>
+                        </div>
+                    </div>
+                    <div class="hero-card">
+                        <div class="stat">
+                            <div class="stat-value">98%</div>
+                            <div class="stat-label">Client Satisfaction</div>
+                        </div>
+                    </div>
+                    <div class="hero-card">
+                        <div class="stat">
+                            <div class="stat-value">24/7</div>
+                            <div class="stat-label">Support Available</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="how" id="how">
+            <div class="container">
+                <h2>How It Works</h2>
+                <p class="muted">Simple, secure, and efficient process to find the right talent</p>
+                <div class="steps">
+                    <div class="step">
+                        <h3>1. Sign Up</h3>
+                        <p>Create your account and verify your business credentials</p>
+                    </div>
+                    <div class="step">
+                        <h3>2. Post Requirements</h3>
+                        <p>Detail your staffing needs and preferences</p>
+                    </div>
+                    <div class="step">
+                        <h3>3. Connect & Hire</h3>
+                        <p>Review proposals and hire the best match</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="contracts" id="contracts">
+            <div class="container">
+                <h2>Featured Contracts</h2>
+                <p class="muted">Browse through our most sought-after categories</p>
+                <div class="contracts-grid">
+                    <div class="contract-card">
+                        <h3>IT & Development</h3>
+                        <p>Access skilled developers and IT professionals</p>
+                        <button class="btn btn-outline" data-auth-action="signup">View Contracts</button>
+                    </div>
+                    <div class="contract-card">
+                        <h3>Construction</h3>
+                        <p>Find experienced construction workers and managers</p>
+                        <button class="btn btn-outline" data-auth-action="signup">View Contracts</button>
+                    </div>
+                    <div class="contract-card">
+                        <h3>Healthcare</h3>
+                        <p>Connect with certified healthcare professionals</p>
+                        <button class="btn btn-outline" data-auth-action="signup">View Contracts</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <div class="container">
+                <h2>Trusted by Industry Leaders</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">10,000+</div>
+                        <div class="stat-label">Successful Placements</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">1,500+</div>
+                        <div class="stat-label">Active Clients</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">98%</div>
+                        <div class="stat-label">Client Satisfaction</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">500+</div>
+                        <div class="stat-label">Verified Agencies</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="authModal" class="modal" aria-hidden="true">
+        <div class="modal-panel auth-modal">
+            <button class="modal-close" data-modal-close>&times;</button>
+
+            <div id="auth-content" class="auth-content">
+                <!-- Sign In Form -->
+                <div class="auth-split-layout">
+                    <div class="auth-form-section">
+                        <form id="signinForm" class="auth-form">
+                            <input name="email" type="email" placeholder="Email" required>
+                            <input name="password" type="password" placeholder="Password" required>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-gold btn-large">Sign In</button>
+                            </div>
+                            <div class="form-links">
+                                <a href="#" class="link" data-action="show-reset">Forgot Password?</a>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="auth-quick-section">
+                        <h3>Quick Sign In</h3>
+                        <p class="quick-subtitle">Sign in with your social accounts:</p>
+                        <div class="social-buttons">
+                            <button data-social-login="google" class="social-btn google-btn">
+                                <img src="/static/google-icon.svg" alt="Google" class="social-icon">
+                                Continue with Google
+                            </button>
+                            <button data-social-login="linkedin" class="social-btn linkedin-btn">
+                                <img src="/static/linkedin-icon.svg" alt="LinkedIn" class="social-icon">
+                                Continue with LinkedIn
+                            </button>
+                        </div>
+                        
+                        <div class="auth-nav-text">
+                            Don't have an account? <a href="#" data-switch="signup">Sign Up</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rest of the forms remain the same -->
+
+                <!-- User Type Selection -->
+                <div id="userTypeSelection" class="user-type-selection hidden">
+                    <h3>Choose Your Account Type</h3>
+                    <p class="selection-subtitle">Select the option that best describes you</p>
+                    
+                    <div class="user-type-cards">
+                        <div class="user-type-card contractors" data-select-type="contractors" tabindex="0" role="button">
+                            <h4>Contractors</h4>
+                            <p>Looking to hire skilled workers</p>
+                        </div>
+                        <div class="user-type-card agency" data-select-type="agency" tabindex="0" role="button">
+                            <h4>Agency</h4>
+                            <p>Providing staffing solutions</p>
+                        </div>
+                        <div class="user-type-card individual" data-select-type="individual" tabindex="0" role="button">
+                            <h4>Individual</h4>
+                            <p>Looking for job opportunities</p>
+                        </div>
+                    </div>
+
+                    <div class="auth-nav-text">
+                        Already have an account? <a href="#" data-switch="signin">Sign In</a>
+                    </div>
+                </div>
+
+                <!-- Contractors Signup Form -->
+                <form id="contractorsForm" class="auth-form hidden">
+                    <h3>Contractor Registration</h3>
+                    <input name="companyName" type="text" placeholder="Company/Organization Name" required>
+                    <!-- Contact Person removed from UI; optional and can be provided later -->
+                    <input name="email" type="email" placeholder="Business Email" required>
+                    <input name="phone" type="tel" placeholder="Contact Number" required>
+                    <div class="form-select-group">
+                        <label for="industry">Industry</label>
+                        <select id="industry" name="industry" title="Select your industry" required>
+                            <option value="">Select Industry</option>
+                            <option value="technology">Technology</option>
+                            <option value="construction">Construction</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="manufacturing">Manufacturing</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <input name="city" type="text" placeholder="Company Location" required>
+                    <input name="password" type="password" placeholder="Password" required>
+                    <input name="confirmPassword" type="password" placeholder="Confirm Password" required>
+                    <button type="submit" class="btn btn-gold btn-large">Create Business Account</button>
+                </form>
+
+                <!-- Agency Signup Form -->
+                <form id="agencyForm" class="auth-form hidden">
+                    <h3>Agency Registration</h3>
+                    <input name="agencyName" type="text" placeholder="Agency Name" required>
+                    <!-- Contact Person removed from UI; optional and can be provided later -->
+                    <input name="email" type="email" placeholder="Agency Email" required>
+                    <input name="phone" type="tel" placeholder="Contact Number" required>
+                    <select name="specializations" required>
+                        <option value="">Specialization</option>
+                        <option value="it">IT & Technology</option>
+                        <option value="construction">Construction</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="manufacturing">Manufacturing</option>
+                        <option value="hospitality">Hospitality</option>
+                    </select>
+                    <input name="city" type="text" placeholder="Primary Location" required>
+                    <input name="password" type="password" placeholder="Password" required>
+                    <input name="confirmPassword" type="password" placeholder="Confirm Password" required>
+                    <button type="submit" class="btn btn-gold btn-large">Create Agency Account</button>
+                </form>
+
+                <!-- Individual Signup Form -->
+                <form id="individualForm" class="auth-form hidden">
+                    <h3>Individual Registration</h3>
+                    <input name="firstName" type="text" placeholder="First Name" required>
+                    <!-- Last Name field removed, no longer required -->
+                    <input name="email" type="email" placeholder="Email" required>
+                    <input name="phone" type="tel" placeholder="Phone Number" required>
+                    <select name="experience" required>
+                        <option value="">Experience Level</option>
+                        <option value="entry">Entry Level (0-2 years)</option>
+                        <option value="intermediate">Intermediate (3-5 years)</option>
+                        <option value="senior">Senior (6+ years)</option>
+                    </select>
+                    <input name="city" type="text" placeholder="Current City" required>
+                    <input name="password" type="password" placeholder="Password" required>
+                    <input name="confirmPassword" type="password" placeholder="Confirm Password" required>
+                    <button type="submit" class="btn btn-gold btn-large">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="container">© Manpower — Crafted for Excellence</div>
+    </footer>
+
+    <script src="/static/script.js" nonce="{{ nonce }}"></script>
+</body>
+</html>

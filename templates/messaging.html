@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Manpower Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="messaging-container">
+        <!-- Left sidebar with conversation list -->
+        <div class="conversations-sidebar">
+            <div class="conversations-header">
+                <h2>Messages</h2>
+                <button id="newMessageBtn" class="btn">New Message</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchConversations" placeholder="Search messages...">
+            </div>
+            <div id="conversationsList" class="conversations-list">
+                <!-- Conversations will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Main chat area -->
+        <div class="chat-area">
+            <!-- Chat header with recipient info -->
+            <div class="chat-header">
+                <div class="recipient-info">
+                    <img src="" alt="" class="recipient-avatar" id="recipientAvatar">
+                    <div class="recipient-details">
+                        <h3 id="recipientName"></h3>
+                        <span id="recipientStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages container -->
+            <div id="messagesContainer" class="messages-container">
+                <!-- Messages will be inserted here by JavaScript -->
+            </div>
+
+            <!-- Message input area -->
+            <div class="message-input-area">
+                <div class="message-attachments">
+                    <button id="attachFileBtn" class="btn-icon" title="Attach File">
+                        <i class="fas fa-paperclip" aria-hidden="true"></i>
+                        <span class="sr-only">Attach File</span>
+                    </button>
+                </div>
+                <div class="message-compose">
+                    <textarea id="messageInput" placeholder="Type a message..."></textarea>
+                    <button id="sendMessageBtn" class="btn-primary">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New message modal -->
+    <div id="newMessageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>New Message</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <input type="text" id="searchUsers" placeholder="Search users...">
+                </div>
+                <div id="usersList" class="users-list">
+                    <!-- Users will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message template (hidden) -->
+    <template id="messageTemplate">
+        <div class="message">
+            <div class="message-avatar">
+                <img src="" alt="">
+            </div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-sender"></span>
+                    <span class="message-time"></span>
+                </div>
+                <div class="message-text"></div>
+                <div class="message-attachments"></div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Conversation template (hidden) -->
+    <template id="conversationTemplate">
+        <div class="conversation">
+            <div class="conversation-avatar">
+                <img src="" alt="">
+            </div>
+            <div class="conversation-content">
+                <div class="conversation-header">
+                    <span class="conversation-name"></span>
+                    <span class="conversation-time"></span>
+                </div>
+                <div class="conversation-preview"></div>
+            </div>
+            <div class="conversation-badge"></div>
+        </div>
+    </template>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <script nonce="{{ nonce }}">
+        // Initialize variables
+        let currentUser = null;
+        let currentConversation = null;
+        let conversations = [];
+
+        // DOM Elements
+        const conversationsList = document.getElementById('conversationsList');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const newMessageBtn = document.getElementById('newMessageBtn');
+        const newMessageModal = document.getElementById('newMessageModal');
+        const searchConversations = document.getElementById('searchConversations');
+        const searchUsers = document.getElementById('searchUsers');
+        const usersList = document.getElementById('usersList');
+
+        // Load user data
+        function loadUserData() {
+            fetch('/api/profile')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentUser = data.profile;
+                        loadConversations();
+                    }
+                })
+                .catch(error => console.error('Error loading user data:', error));
+        }
+
+        // Load conversations
+        function loadConversations() {
+            fetch('/api/messages')
+                .then(response => response.json())
+                .then(data => {
+                    conversations = data.conversations || [];
+                    displayConversations();
+                })
+                .catch(error => console.error('Error loading conversations:', error));
+        }
+
+        // Display conversations in sidebar
+        function displayConversations() {
+            conversationsList.innerHTML = '';
+            conversations.forEach(conversation => {
+                const template = document.getElementById('conversationTemplate').content.cloneNode(true);
+                const container = template.querySelector('.conversation');
+                const name = template.querySelector('.conversation-name');
+                const preview = template.querySelector('.conversation-preview');
+                const time = template.querySelector('.conversation-time');
+                const badge = template.querySelector('.conversation-badge');
+
+                // Get other participant (not current user)
+                const otherParticipant = conversation.participants.find(p => p !== currentUser.email);
+                
+                name.textContent = otherParticipant;
+                preview.textContent = conversation.last_message;
+                time.textContent = formatTime(conversation.updated_at);
+
+                const unreadCount = conversation.unread_counts[currentUser.email] || 0;
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                    badge.classList.add('unread');
+                }
+
+                container.addEventListener('click', () => selectConversation(conversation));
+                conversationsList.appendChild(template);
+            });
+        }
+
+        // Select and display a conversation
+        function selectConversation(conversation) {
+            currentConversation = conversation;
+            const otherParticipant = conversation.participants.find(p => p !== currentUser.email);
+            
+            // Update header
+            document.getElementById('recipientName').textContent = otherParticipant;
+            
+            // Display messages
+            messagesContainer.innerHTML = '';
+            conversation.messages.forEach(message => {
+                displayMessage(message);
+            });
+
+            // Mark messages as read
+            if (conversation.unread_counts[currentUser.email] > 0) {
+                markMessagesAsRead(conversation.id);
+            }
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Display a single message
+        function displayMessage(message) {
+            const template = document.getElementById('messageTemplate').content.cloneNode(true);
+            const container = template.querySelector('.message');
+            const sender = template.querySelector('.message-sender');
+            const text = template.querySelector('.message-text');
+            const time = template.querySelector('.message-time');
+            const attachments = template.querySelector('.message-attachments');
+
+            if (message.sender === currentUser.email) {
+                container.classList.add('message-sent');
+            } else {
+                container.classList.add('message-received');
+            }
+
+            sender.textContent = message.sender;
+            text.textContent = message.content;
+            time.textContent = formatTime(message.timestamp);
+
+            if (message.attachments && message.attachments.length > 0) {
+                message.attachments.forEach(attachment => {
+                    const attachmentEl = document.createElement('div');
+                    attachmentEl.classList.add('message-attachment');
+                    attachmentEl.textContent = attachment;
+                    attachments.appendChild(attachmentEl);
+                });
+            }
+
+            messagesContainer.appendChild(template);
+        }
+
+        // Send a new message
+        function sendMessage() {
+            if (!currentConversation || !messageInput.value.trim()) return;
+
+            const message = {
+                content: messageInput.value.trim(),
+                conversation_id: currentConversation.id
+            };
+
+            fetch('/api/messages/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(message)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageInput.value = '';
+                        loadConversations(); // Refresh conversations
+                    }
+                })
+                .catch(error => console.error('Error sending message:', error));
+        }
+
+        // Mark messages as read
+        function markMessagesAsRead(conversationId) {
+            fetch(`/api/messages/${conversationId}/read`, {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadConversations(); // Refresh conversations
+                    }
+                })
+                .catch(error => console.error('Error marking messages as read:', error));
+        }
+
+        // Handle new message modal
+        newMessageBtn.addEventListener('click', () => {
+            newMessageModal.style.display = 'block';
+            loadUsers();
+        });
+
+        document.querySelector('.close-modal').addEventListener('click', () => {
+            newMessageModal.style.display = 'none';
+        });
+
+        // Load users for new message
+        function loadUsers() {
+            fetch('/api/users')
+                .then(response => response.json())
+                .then(data => {
+                    usersList.innerHTML = '';
+                    data.users.forEach(user => {
+                        if (user.email !== currentUser.email) {
+                            const div = document.createElement('div');
+                            div.classList.add('user-item');
+                            div.textContent = user.email;
+                            div.addEventListener('click', () => startConversation(user.email));
+                            usersList.appendChild(div);
+                        }
+                    });
+                })
+                .catch(error => console.error('Error loading users:', error));
+        }
+
+        // Start a new conversation
+        function startConversation(recipientEmail) {
+            fetch('/api/messages/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ recipient: recipientEmail })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        newMessageModal.style.display = 'none';
+                        loadConversations();
+                    }
+                })
+                .catch(error => console.error('Error starting conversation:', error));
+        }
+
+        // Helper function to format timestamps
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Event listeners
+        sendMessageBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Search conversations
+        searchConversations.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const items = conversationsList.getElementsByClassName('conversation');
+            Array.from(items).forEach(item => {
+                const name = item.querySelector('.conversation-name').textContent.toLowerCase();
+                const preview = item.querySelector('.conversation-preview').textContent.toLowerCase();
+                if (name.includes(query) || preview.includes(query)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Search users
+        searchUsers.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const items = usersList.getElementsByClassName('user-item');
+            Array.from(items).forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+        });
+    </script>
+</body>
+</html>

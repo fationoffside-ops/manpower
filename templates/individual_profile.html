@@ -1,0 +1,177 @@
+{% extends "base_profile.html" %}
+
+{% block title %}{{ user.name }} - Individual Profile{% endblock %}
+
+{% block profile_actions %}
+<button class="btn btn-primary message-btn" id="contactIndividualBtn">
+    <i class="fas fa-message"></i> Message
+</button>
+<button class="btn btn-outline" id="viewAvailabilityBtn">Check Availability</button>
+{% endblock %}
+
+{% block additional_nav %}
+<a href="#experience">Experience</a>
+<a href="#skills">Skills</a>
+<a href="#portfolio">Portfolio</a>
+{% endblock %}
+
+{% block about_content %}
+<div class="individual-overview">
+    <div class="individual-stats">
+        <div class="stat-item">
+            <span class="stat-value" id="completedJobs">0</span>
+            <span class="stat-label">Jobs Completed</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="yearsExperience">0</span>
+            <span class="stat-label">Years Experience</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="rating">0.0</span>
+            <span class="stat-label">Rating</span>
+        </div>
+    </div>
+    <div class="individual-description" id="individualDescription"></div>
+    <div class="verification-badges" id="verificationBadges"></div>
+</div>
+{% endblock %}
+
+{% block additional_sections %}
+<!-- Experience Section -->
+<section id="experience" class="profile-section">
+    <h2>Work Experience</h2>
+    <div class="experience-timeline" id="experienceList">
+        <!-- Experience entries will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Skills Section -->
+<section id="skills" class="profile-section">
+    <h2>Skills & Expertise</h2>
+    <div class="skills-grid" id="skillsList">
+        <!-- Skills will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Portfolio Section -->
+<section id="portfolio" class="profile-section">
+    <h2>Portfolio</h2>
+    <div class="portfolio-grid" id="portfolioList">
+        <!-- Portfolio items will be populated by JavaScript -->
+    </div>
+</section>
+{% endblock %}
+
+{% block profile_data_loaded %}
+// Update individual-specific UI elements
+updateIndividualStats(data.profile);
+updateExperience(data.profile.experience || []);
+updateSkills(data.profile.skills || []);
+updatePortfolio(data.profile.portfolio || []);
+{% endblock %}
+
+{% block update_profile_ui %}
+// Update verification badges
+const badgesContainer = document.getElementById('verificationBadges');
+if (profile.verification_badges && profile.verification_badges.length) {
+    badgesContainer.innerHTML = profile.verification_badges.map(badge => `
+        <div class="badge">
+            <i class="fas fa-badge-check"></i>
+            <span>${badge}</span>
+        </div>
+    `).join('');
+}
+
+// Update description
+document.getElementById('individualDescription').innerHTML = profile.description || '';
+{% endblock %}
+
+{% block additional_scripts %}
+<script nonce="{{ nonce }}">
+function updateIndividualStats(profile) {
+    document.getElementById('completedJobs').textContent = profile.completed_jobs || 0;
+    document.getElementById('yearsExperience').textContent = profile.years_experience || 0;
+    document.getElementById('rating').textContent = (profile.rating || 0).toFixed(1);
+}
+
+function updateExperience(experience) {
+    const container = document.getElementById('experienceList');
+    container.innerHTML = experience.map(exp => `
+        <div class="experience-entry">
+            <div class="experience-timeline-dot"></div>
+            <div class="experience-card">
+                <div class="experience-header">
+                    <h3>${exp.title}</h3>
+                    <span class="company-name">${exp.company}</span>
+                    <span class="experience-duration">${exp.duration}</span>
+                </div>
+                <p>${exp.description}</p>
+                <div class="achievements">
+                    ${exp.achievements.map(achievement => `
+                        <div class="achievement-item">
+                            <i class="fas fa-check"></i>
+                            <span>${achievement}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateSkills(skills) {
+    const container = document.getElementById('skillsList');
+    container.innerHTML = skills.map(skill => `
+        <div class="skill-card">
+            <div class="skill-header">
+                <h3>${skill.name}</h3>
+                <div class="proficiency-level">
+                    ${Array(5).fill().map((_, i) => `
+                        <i class="fas fa-star ${i < skill.proficiency ? 'filled' : ''}"></i>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="skill-details">
+                <p>${skill.description}</p>
+                <div class="endorsements">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span>${skill.endorsements} endorsements</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updatePortfolio(portfolio) {
+    const container = document.getElementById('portfolioList');
+    container.innerHTML = portfolio.map(item => `
+        <div class="portfolio-item">
+            <div class="portfolio-image">
+                <img src="${item.image}" alt="${item.title}">
+                <div class="portfolio-overlay">
+                    <h3>${item.title}</h3>
+                    <p>${item.description}</p>
+                </div>
+            </div>
+            <div class="portfolio-tags">
+                ${item.tags.map(tag => `
+                    <span class="tag">${tag}</span>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Contact Individual
+document.getElementById('contactIndividualBtn').addEventListener('click', () => {
+    const profileId = new URLSearchParams(window.location.search).get('id');
+    window.location.href = `/messages?user=${profileId}`;
+});
+
+// Check Availability
+document.getElementById('viewAvailabilityBtn').addEventListener('click', () => {
+    const profileId = new URLSearchParams(window.location.search).get('id');
+    window.location.href = `/availability?user=${profileId}`;
+});
+</script>
+{% endblock %}

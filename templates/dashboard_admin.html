@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Dashboard · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">
+          <div class="logo">MP</div>
+          <div>
+            <div class="brand-title">Manpower</div>
+            <div class="brand-sub">Admin Dashboard</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#overview">Overview</a>
+          <a href="#users">Users</a>
+          <a href="#contracts">Contracts</a>
+          <a href="#payments">Payments</a>
+          <a href="#reports">Reports</a>
+        </nav>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard">
+      <div class="dashboard-header">
+        <div>
+          <h1>Admin Dashboard</h1>
+          <p class="muted">Manage platform operations, users, and system health</p>
+        </div>
+        <div class="dashboard-actions">
+          <div class="notification-bell" onclick="toggleNotifications()">
+            🔔
+            <div class="notification-badge" id="notification-badge">0</div>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-item">Loading notifications...</div>
+            </div>
+          </div>
+          <button class="btn btn-outline" onclick="generateReport()">Generate Report</button>
+          <button class="btn btn-gold" onclick="showSystemSettings()">System Settings</button>
+        </div>
+      </div>
+
+      <!-- Platform Overview -->
+      <section id="overview" class="dashboard-section">
+        <h2>Platform Overview</h2>
+        <div class="stats-overview">
+          <div class="stat-card">
+            <div class="stat-number" id="total-users">0</div>
+            <div class="stat-label">Total Users</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="active-contracts">0</div>
+            <div class="stat-label">Active Contracts</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="total-revenue">₹0</div>
+            <div class="stat-label">Total Revenue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="platform-growth">0%</div>
+            <div class="stat-label">Monthly Growth</div>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="card">
+            <h3>User Growth</h3>
+            <div class="chart-placeholder">
+              <div class="chart-bar" data-height="40">Jan</div>
+              <div class="chart-bar" data-height="55">Feb</div>
+              <div class="chart-bar" data-height="70">Mar</div>
+              <div class="chart-bar" data-height="85">Apr</div>
+              <div class="chart-bar" data-height="90">May</div>
+              <div class="chart-bar" data-height="100">Jun</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Revenue Trends</h3>
+            <div class="chart-placeholder">
+              <div class="chart-bar" data-height="60">₹2.5L</div>
+              <div class="chart-bar" data-height="75">₹3.2L</div>
+              <div class="chart-bar" data-height="65">₹2.8L</div>
+              <div class="chart-bar" data-height="90">₹4.1L</div>
+              <div class="chart-bar" data-height="85">₹3.9L</div>
+              <div class="chart-bar" data-height="100">₹4.5L</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- User Management -->
+      <section id="users" class="dashboard-section">
+        <h2>User Management</h2>
+        <div class="user-management">
+          <div class="search-filters">
+            <input type="text" placeholder="Search users..." id="user-search">
+                        <div class="form-select-group">
+              <label for="user-role-filter">Filter by Role</label>
+              <select id="user-role-filter" title="Filter by Role">
+                <option value="">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="agency">Agency</option>
+                <option value="contractor">Contractor</option>
+                <option value="individual">Individual</option>
+              </select>
+            </div>
+                        <div class="form-select-group">
+              <label for="user-status-filter">Filter by Status</label>
+              <select id="user-status-filter" title="Filter by Status">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+            <button class="btn btn-outline" onclick="applyUserFilters()">Apply Filters</button>
+          </div>
+          
+          <div id="users-list" class="users-grid">
+            <!-- Users will be loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Contract Management -->
+      <section id="contracts" class="dashboard-section">
+        <h2>Contract Management</h2>
+        <div class="contracts-panel">
+          <div class="contracts-header">
+            <h3>All Contracts</h3>
+            <div class="filter-tabs">
+              <button class="tab active" onclick="filterContracts('all')">All</button>
+              <button class="tab" onclick="filterContracts('open')">Open</button>
+              <button class="tab" onclick="filterContracts('active')">Active</button>
+              <button class="tab" onclick="filterContracts('disputed')">Disputed</button>
+              <button class="tab" onclick="filterContracts('completed')">Completed</button>
+            </div>
+          </div>
+          <div id="contracts-list" class="contract-list">
+            <!-- Contracts will be loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Payment Management -->
+      <section id="payments" class="dashboard-section">
+        <h2>Payment Management</h2>
+        <div class="payments-panel">
+          <div class="stats-overview">
+            <div class="stat-card">
+              <div class="stat-number" id="total-payments">0</div>
+              <div class="stat-label">Total Payments</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="pending-payments">0</div>
+              <div class="stat-label">Pending Payments</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="disputed-payments">0</div>
+              <div class="stat-label">Disputed Payments</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number" id="platform-fees">₹0</div>
+              <div class="stat-label">Platform Fees</div>
+            </div>
+          </div>
+          
+          <div id="payments-list" class="payments-grid">
+            <!-- Payments will be loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Verification Requests -->
+      <section id="verifications" class="dashboard-section">
+        <h2>Verification Requests</h2>
+        <div id="verification-requests" class="verification-grid">
+          <!-- Verification requests will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Reports & Analytics -->
+      <section id="reports" class="dashboard-section">
+        <h2>Reports & Analytics</h2>
+        <div class="reports-panel">
+          <div class="report-actions">
+            <button class="btn btn-outline" onclick="generateUserReport()">User Report</button>
+            <button class="btn btn-outline" onclick="generateFinancialReport()">Financial Report</button>
+            <button class="btn btn-outline" onclick="generatePerformanceReport()">Performance Report</button>
+            <button class="btn btn-gold" onclick="exportAllData()">Export All Data</button>
+          </div>
+          
+          <div id="reports-list" class="reports-grid">
+            <!-- Generated reports will be listed here -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- User Details Modal -->
+    <div id="userModal" class="modal" aria-hidden="true">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeUserModal()">&times;</button>
+        <h3>User Details</h3>
+        <div id="user-details">
+          <!-- User details will be populated here -->
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="verifyUser()">Verify User</button>
+          <button class="btn btn-outline" onclick="suspendUser()">Suspend User</button>
+          <button class="btn btn-gold" onclick="sendMessage()">Send Message</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verification Modal -->
+    <div id="verificationModal" class="modal" aria-hidden="true">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeVerificationModal()">&times;</button>
+        <h3>Review Verification Request</h3>
+        <div id="verification-details">
+          <!-- Verification details will be populated here -->
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="rejectVerification()">Reject</button>
+          <button class="btn btn-gold" onclick="approveVerification()">Approve</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  <script nonce="{{ nonce }}">
+      // Admin dashboard specific JavaScript
+      let selectedUser = null;
+      let selectedVerification = null;
+
+      function toggleNotifications() {
+        const dropdown = document.getElementById('notification-dropdown');
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        loadNotifications();
+      }
+
+      function loadNotifications() {
+        fetch('/api/notifications')
+          .then(r => r.json())
+          .then(data => {
+            const dropdown = document.getElementById('notification-dropdown');
+            const badge = document.getElementById('notification-badge');
+            const notifications = data.notifications || [];
+            
+            badge.textContent = notifications.filter(n => !n.read).length;
+            
+            if (notifications.length === 0) {
+              dropdown.innerHTML = '<div class="notification-item">No notifications</div>';
+            } else {
+              dropdown.innerHTML = notifications.slice(0, 5).map(n => 
+                `<div class="notification-item ${n.read ? 'read' : ''}" onclick="markAsRead('${n.id}')">
+                  <strong>${n.title}</strong><br>
+                  <small>${n.message}</small>
+                </div>`
+              ).join('');
+            }
+          });
+      }
+
+      function markAsRead(notificationId) {
+        fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' })
+          .then(() => loadNotifications());
+      }
+
+      function showUserModal(userData) {
+        selectedUser = userData;
+        document.getElementById('user-details').innerHTML = `
+          <div class="user-info">
+            <h4>${userData.email}</h4>
+            <p><strong>Role:</strong> ${userData.role}</p>
+            <p><strong>Company:</strong> ${userData.company || 'N/A'}</p>
+            <p><strong>Verified:</strong> ${userData.verified ? 'Yes' : 'No'}</p>
+            <p><strong>Rating:</strong> ${userData.rating || 0}/5</p>
+            <p><strong>Joined:</strong> ${new Date(userData.received_at).toLocaleDateString()}</p>
+          </div>
+        `;
+        document.getElementById('userModal').setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+      }
+
+      function closeUserModal() {
+        document.getElementById('userModal').setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        selectedUser = null;
+      }
+
+      function verifyUser() {
+        if (!selectedUser) return;
+        
+        fetch(`/api/users/${selectedUser.email}/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ badge: 'admin-verified' })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            alert('User verified successfully!');
+            closeUserModal();
+            loadUsers();
+          } else {
+            alert('Failed to verify user: ' + data.message);
+          }
+        });
+      }
+
+      function suspendUser() {
+        if (!selectedUser) return;
+        if (confirm(`Are you sure you want to suspend ${selectedUser.email}?`)) {
+          // Implementation for user suspension
+          alert('User suspension feature - coming soon!');
+        }
+      }
+
+      function sendMessage() {
+        if (!selectedUser) return;
+        const message = prompt('Enter message to send:');
+        if (message) {
+          // Implementation for sending admin message
+          alert('Admin messaging feature - coming soon!');
+        }
+      }
+
+      function applyUserFilters() {
+        loadUsers();
+      }
+
+      function filterContracts(status) {
+        loadContracts(status);
+      }
+
+      function generateReport() {
+        fetch('/api/reports/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'admin-summary', date_range: '30' })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            alert('Report generated successfully!');
+            loadReports();
+          } else {
+            alert('Failed to generate report: ' + data.message);
+          }
+        });
+      }
+
+      function logout() {
+        fetch('/api/signout', { method: 'POST' })
+          .then(() => window.location = '/');
+      }
+
+      // Load dashboard data
+      function loadDashboardStats() {
+        fetch('/api/analytics/dashboard')
+          .then(r => r.json())
+          .then(data => {
+            const stats = data.platform_stats || {};
+            animateNumber('total-users', 0, stats.total_users || 0, 1000);
+            animateNumber('active-contracts', 0, stats.total_contracts || 0, 1000);
+            animateNumber('total-revenue', 0, 450000, 1000);
+            animateNumber('platform-growth', 0, stats.platform_growth || 0, 1000);
+          });
+      }
+
+      function loadUsers() {
+        // Load users from API
+        const usersList = document.getElementById('users-list');
+        usersList.innerHTML = '<div class="loading">Loading users...</div>';
+        
+        // Simulate loading users
+        setTimeout(() => {
+          usersList.innerHTML = `
+            <div class="user-card" onclick="showUserModal({email: 'user1@example.com', role: 'individual', verified: true, rating: 4.5})">
+              <h4>user1@example.com</h4>
+              <p>Individual • Verified • 4.5★</p>
+            </div>
+            <div class="user-card" onclick="showUserModal({email: 'agency@example.com', role: 'agency', verified: false, rating: 0})">
+              <h4>agency@example.com</h4>
+              <p>Agency • Pending Verification • No rating</p>
+            </div>
+          `;
+        }, 1000);
+      }
+
+      function loadContracts(status = 'all') {
+        const contractsList = document.getElementById('contracts-list');
+        contractsList.innerHTML = '<div class="loading">Loading contracts...</div>';
+      }
+
+      function loadPayments() {
+        const paymentsList = document.getElementById('payments-list');
+        paymentsList.innerHTML = '<div class="loading">Loading payments...</div>';
+      }
+
+      function loadReports() {
+        const reportsList = document.getElementById('reports-list');
+        reportsList.innerHTML = '<div class="loading">Loading reports...</div>';
+      }
+
+      // Load data on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardStats();
+        loadUsers();
+        loadContracts();
+        loadPayments();
+        loadReports();
+        loadNotifications();
+      });
+    </script>
+  </body>
+</html>

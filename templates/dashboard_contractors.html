@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contractor Dashboard · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand"><div class="logo">MP</div><div class="brand-title">Manpower</div></div>
+        <div class="actions">
+          <a href="/marketplace" class="btn btn-gold">Marketplace</a>
+          <button class="btn btn-ghost" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container dashboard">
+      <div class="dashboard-header">
+        <div>
+          <h1>Contractor Dashboard</h1>
+          <p class="muted">Manage your workforce needs and track hiring progress</p>
+        </div>
+        <div class="dashboard-actions">
+          <div class="notification-bell" onclick="toggleNotifications()">
+            🔔
+            <div class="notification-badge" id="notification-badge">0</div>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-item">Loading notifications...</div>
+            </div>
+          </div>
+          <button class="btn btn-outline" onclick="showModal('contract-modal')">Post New Contract</button>
+          <button class="btn btn-gold" onclick="findAgencies()">Find Agencies</button>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-overview">
+        <div class="stat-card">
+          <div class="stat-number" id="active-contracts">0</div>
+          <div class="stat-label">Active Contracts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="pending-applications">0</div>
+          <div class="stat-label">Pending Applications</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="total-spent">₹0</div>
+          <div class="stat-label">Total Spent</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="avg-rating">0</div>
+          <div class="stat-label">Average Rating</div>
+        </div>
+      </div>
+
+      <!-- Contract Management -->
+      <section id="contracts" class="dashboard-section">
+        <h2>Contract Management</h2>
+        <div class="contracts-panel">
+          <div class="contracts-header">
+            <h3>Your Contracts</h3>
+            <div class="filter-tabs">
+              <button class="tab active" onclick="filterContracts('all')">All</button>
+              <button class="tab" onclick="filterContracts('open')">Open</button>
+              <button class="tab" onclick="filterContracts('active')">Active</button>
+              <button class="tab" onclick="filterContracts('completed')">Completed</button>
+            </div>
+          </div>
+          <div class="contracts-section">
+            <h3>My Contracts</h3>
+            <div id="advanced-search-container"></div>
+            <div id="contracts-list" class="contracts-list">
+              <!-- Contracts will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Analytics Section -->
+      <section id="analytics" class="dashboard-section">
+        <h2>Analytics & Insights</h2>
+        <div class="analytics-grid">
+          <div class="card">
+            <h3>Performance Overview</h3>
+            <div class="chart-placeholder">
+              <div class="chart-bar" data-height="60">Contract Completion Rate</div>
+              <div class="chart-bar" data-height="80">Agency Satisfaction</div>
+              <div class="chart-bar" data-height="70">On-time Delivery</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Cost Analysis</h3>
+            <div id="cost-breakdown">
+              <div class="cost-item">
+                <span>Labor Costs</span>
+                <span id="labor-cost">₹0</span>
+              </div>
+              <div class="cost-item">
+                <span>Escrow Fees</span>
+                <span id="escrow-fees">₹0</span>
+              </div>
+              <div class="cost-item">
+                <span>Platform Fees</span>
+                <span id="platform-fees">₹0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Agency Directory -->
+      <section id="agencies" class="dashboard-section">
+        <h2>Agency Directory</h2>
+        <div class="agency-directory">
+          <div class="search-filters">
+            <input type="text" placeholder="Search agencies..." id="agency-search">
+                        <label for="agency-filter">Filter by Agency</label>
+            <select id="agency-filter" title="Filter by Agency">
+              <option value="">All Agencies</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div id="agencies-list" class="agencies-grid">
+            <!-- Agencies will be loaded here -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Contract Modal -->
+    <div id="contractModal" class="modal">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeContractModal()">&times;</button>
+        <h3>Post New Contract</h3>
+        <form id="contractForm" class="contract-form">
+          <input name="title" type="text" placeholder="Contract Title" required>
+          <textarea name="description" rows="3" placeholder="Contract Description" required></textarea>
+          <input name="location" type="text" placeholder="Location" required>
+          <input name="workers" type="number" placeholder="Number of Workers" required>
+          <input name="budget" type="number" placeholder="Budget (₹)" required>
+                    <label for="urgency-select">Urgency Level</label>
+          <select id="urgency-select" name="urgency" title="Urgency Level">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <input name="skills" type="text" placeholder="Required Skills (comma-separated)">
+          <div class="form-actions">
+            <button type="submit" class="btn btn-gold">Post Contract</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  <script nonce="{{ nonce }}">
+      // Contractor dashboard specific JavaScript
+      function showContractModal() {
+        document.getElementById('contractModal').setAttribute('aria-hidden', 'false');
+      }
+
+      function closeContractModal() {
+        document.getElementById('contractModal').setAttribute('aria-hidden', 'true');
+      }
+
+      function filterContracts(status) {
+        // Filter contracts by status
+        console.log('Filtering contracts by:', status);
+      }
+
+      function logout() {
+        fetch('/api/signout', { 
+          method: 'POST',
+          credentials: 'same-origin'
+        })
+          .then(() => window.location = '/');
+      }
+
+      function loadInbox() {
+        const inboxList = document.getElementById('inboxList');
+        if (!inboxList) return;
+
+        inboxList.innerHTML = '<div class="loading">Loading messages...</div>';
+        
+        fetch('/api/messages', {
+          credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+          const messages = data.messages || [];
+          if (messages.length === 0) {
+            inboxList.innerHTML = '<div class="muted">No messages</div>';
+            return;
+          }
+          
+          inboxList.innerHTML = messages.map(msg => `
+            <div class="message-item">
+              <div class="message-header">
+                <strong>From: ${msg.from}</strong>
+                <span class="muted">${new Date(msg.sent_at).toLocaleString()}</span>
+              </div>
+              <div class="message-content">${msg.message}</div>
+            </div>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Failed to load messages:', err);
+          inboxList.innerHTML = '<div class="error">Failed to load messages</div>';
+        });
+      }
+
+      // Initialize event listeners
+      function initializeEventListeners() {
+        const logoutBtn = document.querySelector('[onclick="logout()"]');
+        if (logoutBtn) {
+          logoutBtn.removeAttribute('onclick');
+          logoutBtn.addEventListener('click', logout);
+        }
+
+        // Filter tabs
+        const filterTabs = document.querySelectorAll('.filter-tabs .tab');
+        filterTabs.forEach(tab => {
+          const filter = tab.getAttribute('onclick')?.match(/filterContracts\('(.+)'\)/)?.[1];
+          if (filter) {
+            tab.removeAttribute('onclick');
+            tab.addEventListener('click', () => filterContracts(filter));
+          }
+        });
+
+        // Notification bell
+        const notificationBell = document.querySelector('.notification-bell');
+        if (notificationBell) {
+          notificationBell.addEventListener('click', toggleNotifications);
+        }
+      }
+
+      // Load dashboard data
+      document.addEventListener('DOMContentLoaded', function() {
+        initializeEventListeners();
+        loadDashboardStats();
+        loadContracts();
+        loadAgencies();
+        loadInbox();
+      });
+
+      function loadDashboardStats() {
+        // Load stats from API
+        animateNumber('active-contracts', 0, 5, 1000);
+        animateNumber('pending-applications', 0, 12, 1000);
+        animateNumber('total-spent', 0, 250000, 1000);
+        animateNumber('avg-rating', 0, 4.7, 1000);
+      }
+
+      function loadContracts() {
+        // Load contracts from API
+        const contractsList = document.getElementById('contracts-list');
+        contractsList.innerHTML = '<div class="loading">Loading contracts...</div>';
+      }
+
+      function loadAgencies() {
+        // Load agencies from API
+        const agenciesList = document.getElementById('agencies-list');
+        agenciesList.innerHTML = '<div class="loading">Loading agencies...</div>';
+      }
+    </script>
+  </body>
+</html>
