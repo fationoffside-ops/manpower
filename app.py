@@ -50,7 +50,12 @@ if not app.secret_key:
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = os.path.join(app.root_path, 'flask_session')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.getenv('SESSION_LIFETIME', 86400)))
-app.config['SESSION_PERMANENT'] = os.getenv('SESSION_PERMANENT', 'True').lower() == 'true'
+app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_COOKIE_SECURE'] = not app.debug  # True in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Initialize the Session
 Session(app)
 
 # File Upload Configuration
@@ -1005,7 +1010,7 @@ def signin():
                 return jsonify({
                     'success': False,
                     'message': 'Invalid credentials'
-                ), 401
+                }), 401
         else:
             # Legacy account without password
             logger.log_security_event(
@@ -1168,24 +1173,51 @@ def profile():
 
 
 def _get_user_by_cookie():
+    """Retrieve user information based on the session cookie and session data."""
     email = request.cookies.get('manpower_user')
-    if not email:
+    session_user = session.get('user_id')
+    
+    if not email or not session_user or email != session_user:
         return None
-    path = REGISTRATIONS_FILE
-    if os.path.exists(path):
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                users = json.load(f)
-            for r in users:
-                p = r.get('payload') if isinstance(r, dict) else None
-                if p and p.get('email') and p.get('email').strip().lower() == email.strip().lower():
-                    return p
-        except Exception:
-            return None
+
+    try:
+        users = safe_read_json(REGISTRATIONS_FILE)
+        for r in users:
+            p = r.get('payload') if isinstance(r, dict) else r
+            if p and p.get('email') and p.get('email').strip().lower() == email.strip().lower():
+                return p
+    except Exception as e:
+        logger.log_error(e, {'operation': 'get_user_by_cookie'})
+
     return None
 
+def create_notification_internal(recipient, title, message, notification_type='info'):
+    """Internal helper to create notifications."""
+    notification = {
+        'id': str(uuid.uuid4()),
+        'recipient': recipient,
+        'title': title,
+        'message': message,
+        'type': notification_type,
+        'read': False,
+        'created_at': datetime.utcnow().isoformat() + 'Z'
+    }
 
-@limiter.exempt
+    try:
+        notifications = safe_read_json(NOTIFICATIONS_FILE)
+        notifications.append(notification)
+        safe_write_json(NOTIFICATIONS_FILE, notifications)
+    except Exception as e:
+        logger.log_error(e, {'operation': 'create_notification_internal'})
+
+    return notification
+
+def send_verification_email(user_email, user_name, verification_token):
+    """Send a verification email to the user."""
+    verification_link = f"{request.host_url}verify?token={verification_token}"
+    email_content = email_service.get_verification_email(user_name, verification_link)
+    send_email(user_email, "Verify Your Account", email_content['text'], email_content['html'])
+
 @app.route('/dashboard')
 def dashboard():
     """Main dashboard router that redirects to appropriate role-based dashboard"""
@@ -1634,21 +1666,45 @@ def decide_application(app_id):
 
 @app.route('/api/signout', methods=['POST'])
 def signout():
-    # Clear session data
-    session.clear()
-    
-    # Clear the authentication cookie with proper security settings
-    resp = make_response(jsonify({'success': True}))
-    resp.set_cookie(
-        'manpower_user',
-        '',
-        expires=0,
-        httponly=True,
-        secure=not app.debug,
-        samesite='Lax',
-        path='/'
-    )
-    return resp
+    """Handle user signout by clearing session and cookies"""
+    try:
+        # Get user info before clearing for logging
+        user_email = request.cookies.get('manpower_user')
+        
+        # Clear all session data
+        session.clear()
+        
+        # Prepare response
+        resp = make_response(jsonify({
+            'success': True,
+            'redirect': '/'
+        }))
+        
+        # Clear the authentication cookie
+        resp.set_cookie(
+            'manpower_user',
+            '',
+            expires=0,
+            httponly=True,
+            secure=not app.debug,
+            samesite='Lax',
+            path='/'
+        )
+        
+        # Clear any additional cookies if present
+        resp.set_cookie('session', '', expires=0, path='/')
+        
+        if user_email:
+            logger.log_user_action('logout_success', user_id=user_email)
+            
+        return resp
+        
+    except Exception as e:
+        logger.log_error(e, {'operation': 'signout'})
+        return jsonify({
+            'success': False,
+            'message': 'Error during sign out'
+        }), 500
 
 
 @app.route('/api/reset-password', methods=['POST'])
@@ -2076,7 +2132,7 @@ def api_marketplace():
 
 
 
-@app.route('/api/marketplace/<email>/message', methods=['POST'])
+@app.route('/api/marketplace/<email>')
 def api_marketplace_message(email):
     user = _get_user_by_cookie()
     if not user:
@@ -2685,7 +2741,8 @@ def generate_report():
         contracts = _load_json('contracts.json')
         applications = _load_json('applications.json')
         payments = _load_json('payments.json')
-        
+        users = _load_json(REGISTRATIONS_FILE)
+
         # Filter data by date range and user
         user_email = user.get('email')
         role = user.get('signupRole') or user.get('role')
@@ -2771,11 +2828,6 @@ def request_verification():
     return jsonify({'success': True, 'verification_request': verification_request})
 
 
-def send_verification_email(user_email, user_name, verification_token):
-    verification_link = f"{request.host_url}verify?token={verification_token}"
-    email_content = email_service.get_verification_email(user_name, verification_link)
-    send_email(user_email, "Verify Your Account", email_content['text'], email_content['html'])
-
 @app.route('/api/verification/approve/<request_id>', methods=['POST'])
 def approve_verification(request_id):
     user = _get_user_by_cookie()
@@ -2834,26 +2886,6 @@ def approve_verification(request_id):
     )
     
     return jsonify({'success': True, 'message': 'Verification approved'})
-
-
-def create_notification_internal(recipient, title, message, notification_type='info'):
-    """Internal helper to create notifications"""
-    notification = {
-        'id': str(uuid.uuid4()),
-        'recipient': recipient,
-        'title': title,
-        'message': message,
-        'type': notification_type,
-        'read': False,
-        'created_at': datetime.utcnow().isoformat() + 'Z'
-    }
-    
-    notifications_path = 'notifications.json'
-    notifications = _load_json(notifications_path)
-    notifications.append(notification)
-    _save_json(notifications_path, notifications)
-    
-    return notification
 
 
 @app.route('/marketplace')

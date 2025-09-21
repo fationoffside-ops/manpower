@@ -277,6 +277,25 @@ function handleUserTypeSelection(type) {
     }
 }
 
+// Global logout function
+function logout() {
+    fetch('/api/signout', {
+        method: 'POST',
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/';
+        } else {
+            console.error('Logout failed:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error during logout:', error);
+    });
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Add reveal animations with staggered timing
