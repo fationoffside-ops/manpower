@@ -199,6 +199,65 @@ def safe_read_json(file_path):
         )
         raise
 
+def create_notification(user_id, title, message, notification_type='info'):
+    """Create a notification for a specific user"""
+    try:
+        notifications = safe_read_json(NOTIFICATIONS_FILE) or {}
+        now = datetime.utcnow().isoformat() + 'Z'
+        
+        notification = {
+            'id': str(uuid.uuid4()),
+            'title': title,
+            'message': message,
+            'type': notification_type,
+            'created_at': now,
+            'read': False
+        }
+
+        # Initialize user's notifications list if it doesn't exist
+        notifications.setdefault(user_id, []).append(notification)
+        safe_write_json(NOTIFICATIONS_FILE, notifications)
+        
+        logger.log_user_action(
+            'notification_created',
+            user_id=user_id,
+            details={'title': title, 'type': notification_type}
+        )
+        return True
+    except Exception as e:
+        logger.log_error(e, {
+            'user_id': user_id,
+            'title': title
+        })
+        return False
+
+def create_notification_for_role(role, title, message, notification_type='info'):
+    """Create a notification for all users with a specific role"""
+    try:
+        users = safe_read_json(REGISTRATIONS_FILE)
+        success = True
+
+        for user in users:
+            if user.get('payload', {}).get('signupRole') == role:
+                user_email = user.get('payload', {}).get('email')
+                if user_email:
+                    if not create_notification(user_email, title, message, notification_type):
+                        success = False
+
+        return success
+    except Exception as e:
+        logger.log_error(e, {
+            'role': role,
+            'title': title
+        })
+        return False
+
+def notify_message_received(recipient_email, sender_email, preview):
+    """Create a notification for a new message"""
+    title = "New Message"
+    message = f"New message from {sender_email}: {preview[:100]}..."
+    return create_notification(recipient_email, title, message, 'message')
+
 def safe_write_json(file_path, data):
     """Safely write to a JSON file with file locking"""
     lock_path = file_path + '.lock'
@@ -383,6 +442,67 @@ def messages_page():
     if not user:
         return redirect('/')
     return render_template('messaging.html', user=user)
+
+@app.route('/api/notifications', methods=['GET'])
+def get_notifications():
+    """Get all notifications for the current user"""
+    try:
+        user = _get_user_by_cookie()
+        if not user:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        email = user.get('email')
+        notifications = safe_read_json(NOTIFICATIONS_FILE) or {}
+        user_notifications = notifications.get(email, [])
+
+        # Sort by created_at, newest first
+        user_notifications.sort(key=lambda x: x['created_at'], reverse=True)
+
+        return jsonify({
+            'success': True,
+            'notifications': user_notifications
+        })
+
+    except Exception as e:
+        logger.log_error(e, {'email': email if 'email' in locals() else None})
+        return jsonify({'success': False, 'message': 'Error fetching notifications'}), 500
+
+@app.route('/api/notifications/read', methods=['POST'])
+def mark_notifications_read():
+    """Mark notifications as read"""
+    try:
+        user = _get_user_by_cookie()
+        if not user:
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+        email = user.get('email')
+        data = request.get_json(force=True) or {}
+        notification_ids = data.get('ids', [])
+
+        notifications = safe_read_json(NOTIFICATIONS_FILE) or {}
+        user_notifications = notifications.get(email, [])
+
+        # Mark specified notifications as read
+        if notification_ids:
+            for note in user_notifications:
+                if note['id'] in notification_ids:
+                    note['read'] = True
+        else:
+            # If no IDs specified, mark all as read
+            for note in user_notifications:
+                note['read'] = True
+
+        notifications[email] = user_notifications
+        safe_write_json(NOTIFICATIONS_FILE, notifications)
+
+        return jsonify({
+            'success': True,
+            'message': 'Notifications marked as read'
+        })
+
+    except Exception as e:
+        logger.log_error(e, {'email': email if 'email' in locals() else None})
+        return jsonify({'success': False, 'message': 'Error updating notifications'}), 500
 
 @app.route('/api/messages/conversations', methods=['GET'])
 def get_conversations():
@@ -1261,56 +1381,179 @@ def apply_contract(contract_id):
 
 @app.route('/api/messages')
 def api_messages():
-    user = _get_user_by_cookie()
-    if not user:
-        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    email = user.get('email')
-    path = 'messages.json'
-    msgs = []
-    if os.path.exists(path):
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                msgs = json.load(f)
-        except Exception:
-            msgs = []
-    inbox = [m for m in msgs if m.get('to') == email or m.get('from') == email]
-    return jsonify({'messages': inbox})
+    """Get all messages for the current user"""
+    try:
+        # Verify authentication
+        user = _get_user_by_cookie()
+        if not user:
+            logger.log_security_event(
+                'unauthorized_access',
+                ip_address=request.remote_addr,
+                details={'endpoint': '/api/messages'}
+            )
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
+        email = user.get('email')
+        messages = safe_read_json(MESSAGES_FILE)
+        
+        # Get all conversations for this user
+        user_conversations = []
+        for conv in messages.get('conversations', []):
+            if email in conv.get('participants', []):
+                # Clean conversation data for client
+                conv_data = {
+                    'id': conv['id'],
+                    'participants': conv['participants'],
+                    'created_at': conv['created_at'],
+                    'updated_at': conv['updated_at'],
+                    'last_message': conv['last_message'],
+                    'messages': conv['messages'],
+                    'unread_count': conv['unread_counts'].get(email, 0)
+                }
+                user_conversations.append(conv_data)
 
+        # Sort by most recent first
+        user_conversations.sort(key=lambda x: x['updated_at'], reverse=True)
+
+        logger.log_api_request(
+            'get_messages',
+            'GET',
+            user_id=email,
+            ip_address=request.remote_addr
+        )
+
+        return jsonify({
+            'success': True,
+            'conversations': user_conversations
+        })
+
+    except Exception as e:
+        logger.log_error(e, {'email': email if 'email' in locals() else None})
+        return jsonify({
+            'success': False,
+            'message': 'Error retrieving messages'
+        }), 500
 
 @app.route('/api/messages/send', methods=['POST'])
 def api_messages_send():
-    user = _get_user_by_cookie()
-    if not user:
-        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
-    data = request.get_json(force=True) or {}
-    to = (data.get('to') or '').strip()
-    text = (data.get('message') or '').strip()
-    if not to or not text:
-        return jsonify({'success': False, 'message': 'to and message required'}), 400
-
-    msg = {
-        'to': to,
-        'from': user.get('email'),
-        'message': text,
-        'sent_at': datetime.utcnow().isoformat() + 'Z'
-    }
-    path = 'messages.json'
-    existing = []
-    if os.path.exists(path):
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                existing = json.load(f)
-        except Exception:
-            existing = []
-    existing.append(msg)
+    """Send a new message"""
     try:
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(existing, f, indent=2)
-    except Exception:
-        return jsonify({'success': False, 'message': 'Unable to save message'}), 500
+        # Verify authentication
+        user = _get_user_by_cookie()
+        if not user:
+            logger.log_security_event(
+                'unauthorized_access',
+                ip_address=request.remote_addr,
+                details={'endpoint': '/api/messages/send'}
+            )
+            return jsonify({'success': False, 'message': 'Not authenticated'}), 401
 
-    return jsonify({'success': True, 'message': 'Message sent'})
+        data = request.get_json(force=True) or {}
+        to_email = (data.get('to') or '').strip().lower()
+        message_text = (data.get('message') or '').strip()
+        conversation_id = data.get('conversation_id')
+
+        # Validate input
+        if not to_email or not message_text:
+            return jsonify({
+                'success': False,
+                'message': 'Recipient and message text are required'
+            }), 400
+
+        from_email = user.get('email')
+        
+        # Check if recipient exists
+        users = safe_read_json(REGISTRATIONS_FILE)
+        recipient_exists = False
+        for r in users:
+            p = r.get('payload', {})
+            if p.get('email') == to_email:
+                recipient_exists = True
+                break
+
+        if not recipient_exists:
+            return jsonify({
+                'success': False,
+                'message': 'Recipient not found'
+            }), 404
+
+        messages = safe_read_json(MESSAGES_FILE)
+        now = datetime.utcnow().isoformat() + 'Z'
+
+        # Find or create conversation
+        if conversation_id:
+            conversation = None
+            for conv in messages.get('conversations', []):
+                if conv['id'] == conversation_id:
+                    if from_email not in conv['participants']:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Not authorized for this conversation'
+                        }), 403
+                    conversation = conv
+                    break
+        else:
+            # Create new conversation
+            conversation_id = str(uuid.uuid4())
+            conversation = {
+                'id': conversation_id,
+                'participants': [from_email, to_email],
+                'created_at': now,
+                'updated_at': now,
+                'last_message': message_text,
+                'messages': [],
+                'unread_counts': {
+                    from_email: 0,
+                    to_email: 1
+                }
+            }
+            messages.setdefault('conversations', []).append(conversation)
+
+        if not conversation:
+            return jsonify({
+                'success': False,
+                'message': 'Conversation not found'
+            }), 404
+
+        # Add message
+        message = {
+            'id': str(uuid.uuid4()),
+            'from': from_email,
+            'content': message_text,
+            'timestamp': now,
+            'read_by': [from_email]
+        }
+        
+        conversation['messages'].append(message)
+        conversation['last_message'] = message_text
+        conversation['updated_at'] = now
+        conversation['unread_counts'][to_email] = conversation['unread_counts'].get(to_email, 0) + 1
+
+        # Save changes
+        safe_write_json(MESSAGES_FILE, messages)
+
+        logger.log_api_request(
+            'send_message',
+            'POST',
+            user_id=from_email,
+            ip_address=request.remote_addr
+        )
+
+        return jsonify({
+            'success': True,
+            'message': message,
+            'conversation': conversation
+        })
+
+    except Exception as e:
+        logger.log_error(e, {
+            'from_email': from_email if 'from_email' in locals() else None,
+            'to_email': to_email if 'to_email' in locals() else None
+        })
+        return jsonify({
+            'success': False,
+            'message': 'Error sending message'
+        }), 500
 
 
 @app.route('/api/applications/<int:app_id>/decide', methods=['POST'])
@@ -2139,24 +2382,7 @@ def process_payment(payment_id):
 
 
 # Notification System
-@app.route('/api/notifications')
-def get_notifications():
-    user = _get_user_by_cookie()
-    if not user:
-        return jsonify({'notifications': []}), 401
-    
-    notifications_path = 'notifications.json'
-    notifications = []
-    
-    if os.path.exists(notifications_path):
-        try:
-            with open(notifications_path, 'r', encoding='utf-8') as f:
-                all_notifications = json.load(f)
-            notifications = [n for n in all_notifications if n.get('recipient') == user.get('email')]
-        except Exception:
-            notifications = []
-    
-    return jsonify({'notifications': notifications})
+
 
 
 @app.route('/api/notifications/create', methods=['POST'])
