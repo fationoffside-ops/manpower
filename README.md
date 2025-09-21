@@ -191,4 +191,8 @@ If you have a `registrations.json` at the repository root, it may be an older co
 
 ---
 
-This MVP is ready for further development and real-world testing. For more details, see the code and comments in each file.
+This MVP is ready for further development and real-world testing. For more details, see the code and comments in each file described below.
+
+## 📖 Overview
+
+A modern, secure workforce management platform that facilitates connections between agencies, contractors, and individual workers.
