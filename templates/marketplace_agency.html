@@ -7,23 +7,7 @@
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
-    <header class="site-header" role="banner">
-      <div class="container header-inner">
-        <div class="brand" role="group">
-          <div class="logo" role="img" aria-label="MP Logo">MP</div>
-          <div>
-            <div class="brand-title">Manpower</div>
-            <div class="brand-sub">Agency Marketplace</div>
-          </div>
-        </div>
-        <nav class="nav" role="navigation" aria-label="Main navigation">
-          <a href="#browse">Browse</a>
-          <a href="#my-listings">My Recruits</a>
-          <a href="#trades">Trade History</a>
-          <a href="/dashboard" class="nav-link">Back to Dashboard</a>
-        </nav>
-      </div>
-    </header>
+    {% include '_header.html' %}
 
     <main class="container dashboard" role="main">
       <div class="dashboard-header">

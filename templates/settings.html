@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    {% include '_header.html' %}
+
+    <main class="container dashboard">
+      <div class="dashboard-header">
+        <div>
+          <h1>Account Settings</h1>
+          <p class="muted">Manage your account information, notification preferences and connected apps.</p>
+        </div>
+      </div>
+
+      <section class="dashboard-section">
+        <div class="card">
+          <h3>Profile</h3>
+          <p class="muted">Update your display name, avatar and contact details in your profile page.</p>
+          <a class="btn btn-outline" href="/profile">Go to Profile</a>
+        </div>
+      </section>
+
+      <section class="dashboard-section">
+        <div class="card">
+          <h3>Notifications</h3>
+          <p class="muted">Configure email and in-app notifications.</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>
