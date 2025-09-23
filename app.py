@@ -446,7 +446,23 @@ def messages_page():
     user = _get_user_by_cookie()
     if not user:
         return redirect('/')
-    return render_template('messaging.html', user=user)
+    return render_template('messaging.html', user=user, nonce=g.nonce)
+
+
+@app.route('/profile')
+def profile_page():
+    user = _get_user_by_cookie()
+    if not user:
+        return redirect('/')
+    return render_template('profile.html', user=user, nonce=g.nonce)
+
+
+@app.route('/settings')
+def settings_page():
+    user = _get_user_by_cookie()
+    if not user:
+        return redirect('/')
+    return render_template('settings.html', user=user, nonce=g.nonce)
 
 @app.route('/api/notifications', methods=['GET'])
 def get_notifications():

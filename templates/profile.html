@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Profile · Manpower</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    {% include '_header.html' %}
+
+    <main class="container dashboard">
+      <div class="dashboard-header">
+        <div>
+          <h1>Your Profile</h1>
+          <p class="muted">View and edit your public profile and contact details.</p>
+        </div>
+        <div class="dashboard-actions">
+          <a class="btn btn-outline" href="/messages">Open Chats</a>
+          <a class="btn btn-gold" href="/marketplace">Browse Marketplace</a>
+        </div>
+      </div>
+
+      <section class="dashboard-section">
+        <div class="card">
+          <h3>Account</h3>
+          <p><strong>Email:</strong> {{ user.get('email') if user else '—' }}</p>
+          <p><strong>Role:</strong> {{ user.get('signupRole') if user else '—' }}</p>
+        </div>
+      </section>
+
+      <section class="dashboard-section">
+        <div class="card">
+          <h3>Public Profile</h3>
+          <p class="muted">Add a profile photo, bio, and list of skills to help agencies find you.</p>
+          <button class="btn btn-outline">Edit Profile</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>
